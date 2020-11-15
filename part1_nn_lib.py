@@ -256,6 +256,7 @@ class LinearLayer(Layer):
         self._cache_current = {
             "x": x,
         }
+        print("calculating forward")
 
         """
             We propagate the value that we want to return here
@@ -282,6 +283,8 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+        print("calculating backward")
+        print(grad_z)
         x = self._cache_current["x"]
         self._grad_W_current = x.T * grad_z
         self._grad_b_current = np.ones(len(x)) * grad_z
@@ -302,6 +305,8 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+        print("calculating learning rate")
+        print(learning_rate)
         self._W = self._W - learning_rate * self._grad_W_current
         self._b = self._b - learning_rate * self._grad_b_current
         #######################################################################
