@@ -262,6 +262,9 @@ class LinearLayer(Layer):
         """
             We propagate the value that we want to return here
         """
+        print(x)
+        print(self._W)
+        print(self._b)
         return x * self._W + self._b
 
         #######################################################################
@@ -286,6 +289,8 @@ class LinearLayer(Layer):
         #                       ** START OF YOUR CODE **
         #######################################################################
         x = self._cache_current["x"]
+        print(grad_z)
+        print(np.ones(np.len(x)))
         self._grad_W_current = x.T * grad_z
         self._grad_b_current = np.ones(np.len(x)) * grad_z
 
