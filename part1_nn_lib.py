@@ -227,7 +227,7 @@ class LinearLayer(Layer):
         #                       ** START OF YOUR CODE **
         #######################################################################
         self._W = xavier_init((n_in, n_out))
-        self._b = np.zeros((n_in, n_out))
+        self._b = np.zeros((1, n_out))
 
         self._cache_current = None
         self._grad_W_current = None
@@ -264,8 +264,9 @@ class LinearLayer(Layer):
         """
         print(x)
         print(self._W)
-        print(self._b)
-        return x * self._W + self._b
+        print(np.tile(self._b, (1, np.len(x))))
+        print(x * self._W + self._b)
+        return x * self._W + np.tile(self._b, (1, np.len(x)))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -288,6 +289,7 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+        print("calling backward")
         x = self._cache_current["x"]
         print(grad_z)
         print(np.ones(np.len(x)))
@@ -308,6 +310,7 @@ class LinearLayer(Layer):
         Arguments:
             learning_rate {float} -- Learning rate of update step.
         """
+        print("calling parameter update")
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
