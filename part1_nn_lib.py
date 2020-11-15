@@ -229,6 +229,8 @@ class LinearLayer(Layer):
         self._W = xavier_init((n_in, n_out))
         self._b = np.zeros((n_in, n_out))
 
+        print(self._W)
+
         self._cache_current = None
         self._grad_W_current = None
         self._grad_b_current = None
@@ -262,7 +264,7 @@ class LinearLayer(Layer):
         """
             We propagate the value that we want to return here
         """
-        return self._W * x + self._b
+        return x * self._W + self._b
 
         #######################################################################
         #                       ** END OF YOUR CODE **
