@@ -258,9 +258,12 @@ class LinearLayer(Layer):
         }
         print("calculating forward")
 
+        print(x)
+
         """
             We propagate the value that we want to return here
         """
+        print("returning from forward")
         return x.dot(self._W) + np.tile(self._b, (1, len(x)))
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -288,6 +291,8 @@ class LinearLayer(Layer):
         x = self._cache_current["x"]
         self._grad_W_current = x.T * grad_z
         self._grad_b_current = np.ones(len(x)) * grad_z
+
+        print("returning from backward")
 
         return grad_z * self._W.T
         #######################################################################
