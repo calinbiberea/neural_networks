@@ -2,7 +2,7 @@ import numpy as np
 import pickle
 
 
-def xavier_init(size, gain = 1.0):
+def xavier_init(size, gain=1.0):
     """
     Xavier initialization of network weights.
 
@@ -226,8 +226,8 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._W = None
-        self._b = None
+        self._W = xavier_init((n_in, n_out))
+        self._b = np.zeros((n_in, n_out))
 
         self._cache_current = None
         self._grad_W_current = None
@@ -239,6 +239,7 @@ class LinearLayer(Layer):
 
     def forward(self, x):
         """
+
         Performs forward pass through the layer (i.e. returns Wx + b).
 
         Logs information needed to compute gradient at a later stage in
@@ -253,7 +254,15 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        self._cache_current = {
+            "x": x,
+        }
+
+        """
+            We propagate the value that we want to return here
+        """
+        return self._W * x + self._b
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -276,7 +285,11 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        x = self._cache_current["x"]
+        self._grad_W_current = x.T * grad_z
+        self._grad_b_current = np.ones(np.len(x)) * grad_z
+
+        return grad_z * self._W.T
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -293,7 +306,8 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        self._W = self._W - learning_rate * self._grad_W_current
+        self._b = self._b - learning_rate * self._grad_b_current
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -345,7 +359,7 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        return np.zeros((1, self.neurons[-1])) # Replace with your own code
+        return np.zeros((1, self.neurons[-1]))  # Replace with your own code
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -416,13 +430,13 @@ class Trainer(object):
     """
 
     def __init__(
-        self,
-        network,
-        batch_size,
-        nb_epoch,
-        learning_rate,
-        loss_fun,
-        shuffle_flag,
+            self,
+            network,
+            batch_size,
+            nb_epoch,
+            learning_rate,
+            loss_fun,
+            shuffle_flag,
     ):
         """
         Constructor of the Trainer.
