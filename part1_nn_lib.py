@@ -232,7 +232,6 @@ class LinearLayer(Layer):
         self._cache_current = None
         self._grad_W_current = None
         self._grad_b_current = None
-
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -254,7 +253,6 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
         self._cache_current = {
             "x": x,
         }
@@ -262,12 +260,7 @@ class LinearLayer(Layer):
         """
             We propagate the value that we want to return here
         """
-        print(x)
-        print(self._W)
-        print(np.tile(self._b, (1, np.len(x))))
-        print(x * self._W + self._b)
-        return x * self._W + np.tile(self._b, (1, np.len(x)))
-
+        return x.dot(self._W) + np.tile(self._b, (1, len(x)))
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -289,15 +282,11 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        print("calling backward")
         x = self._cache_current["x"]
-        print(grad_z)
-        print(np.ones(np.len(x)))
         self._grad_W_current = x.T * grad_z
-        self._grad_b_current = np.ones(np.len(x)) * grad_z
+        self._grad_b_current = np.ones(len(x)) * grad_z
 
         return grad_z * self._W.T
-
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -310,13 +299,11 @@ class LinearLayer(Layer):
         Arguments:
             learning_rate {float} -- Learning rate of update step.
         """
-        print("calling parameter update")
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
         self._W = self._W - learning_rate * self._grad_W_current
         self._b = self._b - learning_rate * self._grad_b_current
-
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
