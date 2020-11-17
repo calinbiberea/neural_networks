@@ -292,7 +292,7 @@ class LinearLayer(Layer):
         """
             We propagate the value that we want to return here
         """
-        return x.dot(self._W) + np.tile(self._b, (1, len(x)))
+        return x.dot(self._W) + np.repeat(self._b, len(x), axis=0)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -591,8 +591,8 @@ class Trainer(object):
         #######################################################################
 
         for i in range(0, self.nb_epoch):
-            epoch_input, epoch_target = self.shuffle(input_dataset,
-                                                     target_dataset) if self.shuffle_flag else input_dataset, target_dataset
+            epoch_input, epoch_target = self.shuffle(input_dataset, target_dataset) \
+                if self.shuffle_flag else (input_dataset, target_dataset)
 
             input_batches = np.array_split(epoch_input, self.batch_size)
             target_batches = np.array_split(epoch_target, self.batch_size)
