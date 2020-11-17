@@ -133,6 +133,9 @@ class SigmoidLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+
+        self._cache_current = {x}
+
         return np.vectorize(sigmoid)(x)
 
         #######################################################################
@@ -150,13 +153,14 @@ class SigmoidLayer(Layer):
             grad_z {np.ndarray} -- Gradient array of shape (batch_size, n_out).
 
         Returns:
-            {np.ndarray} -- Array containing gradient with repect to layer
+            {np.ndarray} -- Array containing gradient with respect to layer
                 input, of shape (batch_size, n_in).
         """
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        return grad_z * np.vectorize(sigmoid_derivative)(self._cache_current.x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
