@@ -136,6 +136,9 @@ class SigmoidLayer(Layer):
 
         self._cache_current = {x}
 
+        print(x)
+        var = np.vectorize(sigmoid)(x)
+        print(var)
         return np.vectorize(sigmoid)(x)
 
         #######################################################################
