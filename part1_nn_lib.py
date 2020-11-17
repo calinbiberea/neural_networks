@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import functools
 
 
 def xavier_init(size, gain=1.0):
@@ -345,6 +346,7 @@ activationLayer = {
     "sigmoid": SigmoidLayer()
 }
 
+
 class MultiLayerNetwork(object):
     """
     MultiLayerNetwork: A network consisting of stacked linear layers and
@@ -377,7 +379,9 @@ class MultiLayerNetwork(object):
 
         for i in range(-1, len(neurons) - 1):
             layers.append(LinearLayer(neurons[i] if i > -1 else input_dim, neurons[i + 1]))
-            layers.append(activationLayer[activations[i + 1]])
+
+            if activations[i + 1] != "identity":
+                layers.append(activationLayer[activations[i + 1]])
 
         self._layers = layers
 
@@ -399,7 +403,17 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        return np.zeros((1, self.neurons[-1]))  # Replace with your own code
+
+        layers = self._layers
+
+        output = layers[0].forward(x)
+
+        for i in range(1, len(layers)):
+            output = layers[i].forward(output)
+
+        return output
+
+        # return functools.reduce(lambda acc, layer : layer.forward(acc), layers, x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -417,13 +431,21 @@ class MultiLayerNetwork(object):
                 #_neurons_in_final_layer).
 
         Returns:
-            {np.ndarray} -- Array containing gradient with repect to layer
+            {np.ndarray} -- Array containing gradient with respect to layer
                 input, of shape (batch_size, input_dim).
         """
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        layers = self._layers
+
+        grad = layers[-1].backward(grad_z)
+
+        for i in range(len(layers) - 2, -1, -1):
+            grad = layers[i].backward(grad)
+
+        return grad
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -440,7 +462,10 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        layers = self._layers
+
+        for layer in layers: layer.update_params(learning_rate)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
