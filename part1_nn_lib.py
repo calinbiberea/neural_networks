@@ -650,7 +650,9 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
+        print("The data is \n")
+        print(data)
+        print("\n\n")
         self.norm_params = [{"min": np.amin(feat), "max": np.amax(feat)} for feat in data.T]
 
         #######################################################################
