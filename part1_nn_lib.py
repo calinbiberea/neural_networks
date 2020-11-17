@@ -134,7 +134,7 @@ class SigmoidLayer(Layer):
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        self._cache_current = {x}
+        self._cache_current = {"x": x}
 
         print(x)
         var = np.vectorize(sigmoid)(x)
@@ -663,4 +663,7 @@ def example_main():
 
 
 if __name__ == "__main__":
-    example_main()
+    # example_main()
+
+    layer = SigmoidLayer()
+    outputs = layer.forward(np.ones(10))
