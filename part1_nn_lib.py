@@ -136,9 +136,6 @@ class SigmoidLayer(Layer):
 
         self._cache_current = {"x": x}
 
-        print(x)
-        var = np.vectorize(sigmoid)(x)
-        print(var)
         return np.vectorize(sigmoid)(x)
 
         #######################################################################
@@ -163,13 +160,21 @@ class SigmoidLayer(Layer):
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        var = np.multiply(grad_z, np.vectorize(sigmoid_derivative)(self._cache_current["x"]))
-        print(var)
-        return np.multiply(grad_z, np.vectorize(sigmoid_derivative)(self._cache_current["x"]))
+        x = self._cache_current["x"]
+
+        return np.multiply(grad_z, np.vectorize(sigmoid_derivative)(x))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
+
+
+# ReLU function and derivative
+
+def relu(x): return max(x, 0)
+
+
+def relu_derivative(x): return 1 if x > 0 else 0
 
 
 class ReluLayer(Layer):
@@ -199,7 +204,10 @@ class ReluLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        self._cache_current = {"x": x}
+
+        return np.vectorize(relu)(x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -216,13 +224,16 @@ class ReluLayer(Layer):
             grad_z {np.ndarray} -- Gradient array of shape (batch_size, n_out).
 
         Returns:
-            {np.ndarray} -- Array containing gradient with repect to layer
+            {np.ndarray} -- Array containing gradient with respect to layer
                 input, of shape (batch_size, n_in).
         """
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        x = self._cache_current["x"]
+
+        return np.multiply(grad_z, np.vectorize(relu_derivative)(x))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -663,9 +674,4 @@ def example_main():
 
 
 if __name__ == "__main__":
-    # example_main()
-
-    layer = SigmoidLayer()
-    outputs = layer.forward(np.ones(10))
-
-    layer.backward(np.ones(10))
+    example_main()
