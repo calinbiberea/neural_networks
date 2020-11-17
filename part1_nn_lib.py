@@ -1,7 +1,6 @@
 import numpy as np
 import pickle
-import functools
-
+from sklearn.preprocessing import MinMaxScaler
 
 def xavier_init(size, gain=1.0):
     """
@@ -650,12 +649,12 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        print("init")
-        self.norm_params = [{"min": np.amin(feat), "max": np.amax(feat)} for feat in data.T]
+        scaler = MinMaxScaler()
+        scaler.fit(data)
+        self.norm_params = scaler
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
-
     def apply(self, data):
         """
         Apply the pre-processing operations to the provided dataset.
@@ -670,17 +669,15 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        print("apply")
         def normalize(feat, norm_param):
             if norm_param["min"] != norm_param["max"]:
                 return (feat - norm_param["min"]) / (norm_param["max"] - norm_param["min"])
             else:
                 return feat - norm_param["min"] + 1
 
-        norm_params = self.norm_params
-
-        return np.array([normalize(data.T[i], norm_params[i])
-                         for i in range(0, len(norm_params))]).T
+        # norm_params = self.norm_params
+        scaler = self.norm_params
+        return scaler.transform(data)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -700,15 +697,8 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        print("revert")
-        def unnormalize(feat, norm_param):
-            return feat * (norm_param["max"] - norm_param["min"]) + norm_param["min"]
-
-        norm_params = self.norm_params
-
-        return np.array([unnormalize(data.T[i], norm_params[i])
-                         for i in range(0, len(norm_params))]).T
-
+        scaler = self.norm_params
+        return scaler.inverse_transform(data)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
