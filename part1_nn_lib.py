@@ -373,7 +373,6 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        print(activations)
 
         layers = []
 
@@ -654,6 +653,14 @@ class Preprocessor(object):
 
         self.norm_params = [{"min": np.amin(x), "max": np.amax(x)} for x in data]
 
+        print("init")
+
+        print("data")
+        print(data)
+        
+        print("norm params")
+        print(self.norm_params)
+
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -678,8 +685,21 @@ class Preprocessor(object):
 
         norm_params = self.norm_params
 
-        return np.array([normalize(data[i], norm_params[i])
+
+        res = np.array([normalize(data[i], norm_params[i])
                          for i in range(0, min(len(norm_params), len(data)))])
+
+        print("apply")
+        print("data")
+        print(data)
+
+        print("norm params")
+        print(self.norm_params)
+
+        print("res")
+        print(res)
+
+        return res
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -705,8 +725,21 @@ class Preprocessor(object):
 
         norm_params = self.norm_params
 
-        return np.array([unnormalize(data[i], norm_params[i])
+        res = np.array([unnormalize(data[i], norm_params[i])
                          for i in range(0, min(len(norm_params), len(data)))])
+
+        print("revert")
+
+        print("data")
+        print(data)
+
+        print("norm params")
+        print(self.norm_params)
+
+        print("res")
+        print(res)
+
+        return res
 
         #######################################################################
         #                       ** END OF YOUR CODE **
