@@ -650,11 +650,8 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        print("The data is \n")
-        print(data)
-        print("\n\n")
+        print("init")
         self.norm_params = [{"min": np.amin(feat), "max": np.amax(feat)} for feat in data.T]
-
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -673,7 +670,7 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
+        print("apply")
         def normalize(feat, norm_param):
             if norm_param["min"] != norm_param["max"]:
                 return (feat - norm_param["min"]) / (norm_param["max"] - norm_param["min"])
@@ -703,7 +700,7 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
+        print("revert")
         def unnormalize(feat, norm_param):
             return feat * (norm_param["max"] - norm_param["min"]) + norm_param["min"]
 
