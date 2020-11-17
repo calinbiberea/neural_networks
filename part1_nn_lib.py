@@ -624,7 +624,9 @@ class Trainer(object):
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        return self._loss_layer.forward(input_dataset, target_dataset)
+        output = self.network.forward(input_dataset)
+
+        return self._loss_layer.forward(output, target_dataset)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -676,8 +678,8 @@ class Preprocessor(object):
 
         norm_params = self.norm_params
 
-        return [data[i].map(lambda feat: normalize(feat, norm_params[i]))
-                for i in range(0, len(norm_params))]
+        return np.array([normalize(data[i], norm_params[i])
+                         for i in range(0, min(len(norm_params), len(data)))])
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -703,8 +705,8 @@ class Preprocessor(object):
 
         norm_params = self.norm_params
 
-        return [data[i].map(lambda feat: unnormalize(feat, norm_params[i]))
-                for i in range(0, len(norm_params))]
+        return np.array([unnormalize(data[i], norm_params[i])
+                         for i in range(0, min(len(norm_params), len(data)))])
 
         #######################################################################
         #                       ** END OF YOUR CODE **
