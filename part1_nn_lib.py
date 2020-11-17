@@ -651,15 +651,7 @@ class Preprocessor(object):
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        self.norm_params = [{"min": np.amin(x), "max": np.amax(x)} for x in data]
-
-        print("init")
-
-        print("data")
-        print(data)
-        
-        print("norm params")
-        print(self.norm_params)
+        self.norm_params = [{"min": np.amin(feat), "max": np.amax(feat)} for feat in data.T]
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -685,21 +677,8 @@ class Preprocessor(object):
 
         norm_params = self.norm_params
 
-
-        res = np.array([normalize(data[i], norm_params[i])
-                         for i in range(0, min(len(norm_params), len(data)))])
-
-        print("apply")
-        print("data")
-        print(data)
-
-        print("norm params")
-        print(self.norm_params)
-
-        print("res")
-        print(res)
-
-        return res
+        return np.array([normalize(data.T[i], norm_params[i])
+                         for i in range(0, len(norm_params))]).T
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -725,21 +704,8 @@ class Preprocessor(object):
 
         norm_params = self.norm_params
 
-        res = np.array([unnormalize(data[i], norm_params[i])
-                         for i in range(0, min(len(norm_params), len(data)))])
-
-        print("revert")
-
-        print("data")
-        print(data)
-
-        print("norm params")
-        print(self.norm_params)
-
-        print("res")
-        print(res)
-
-        return res
+        return np.array([unnormalize(data.T[i], norm_params[i])
+                         for i in range(0, len(norm_params))]).T
 
         #######################################################################
         #                       ** END OF YOUR CODE **
