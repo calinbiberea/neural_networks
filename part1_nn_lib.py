@@ -606,7 +606,6 @@ class Trainer(object):
 
                 self.network.update_params(self.learning_rate)
 
-
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -650,7 +649,8 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        self.norm_params = [{"min": np.amin(x), "max": np.amax(x)} for x in data]
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -666,10 +666,18 @@ class Preprocessor(object):
         Returns:
             {np.ndarray} normalized dataset.
         """
+
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        def normalize(feat, norm_param):
+            return (feat - norm_param["min"]) / (norm_param["max"] - norm_param["min"])
+
+        norm_params = self.norm_params
+
+        return [data[i].map(lambda feat: normalize(feat, norm_params[i]))
+                for i in range(0, len(norm_params))]
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -685,10 +693,18 @@ class Preprocessor(object):
         Returns:
             {np.ndarray} reverted dataset.
         """
+
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        def unnormalize(feat, norm_param):
+            return feat * (norm_param["max"] - norm_param["min"]) + norm_param["min"]
+
+        norm_params = self.norm_params
+
+        return [data[i].map(lambda feat: unnormalize(feat, norm_params[i]))
+                for i in range(0, len(norm_params))]
 
         #######################################################################
         #                       ** END OF YOUR CODE **
