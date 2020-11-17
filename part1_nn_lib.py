@@ -286,9 +286,7 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._cache_current = {
-            "x": x,
-        }
+        self._cache_current = {"x": x}
 
         """
             We propagate the value that we want to return here
@@ -309,7 +307,7 @@ class LinearLayer(Layer):
             grad_z {np.ndarray} -- Gradient array of shape (batch_size, n_out).
 
         Returns:
-            {np.ndarray} -- Array containing gradient with repect to layer
+            {np.ndarray} -- Array containing gradient with respect to layer
                 input, of shape (batch_size, n_in).
         """
         #######################################################################
@@ -342,6 +340,11 @@ class LinearLayer(Layer):
         #######################################################################
 
 
+activationLayer = {
+    "relu": ReluLayer(),
+    "sigmoid": SigmoidLayer()
+}
+
 class MultiLayerNetwork(object):
     """
     MultiLayerNetwork: A network consisting of stacked linear layers and
@@ -355,8 +358,8 @@ class MultiLayerNetwork(object):
         Arguments:
             - input_dim {int} -- Number of features in the input (excluding 
                 the batch dimension).
-            - neurons {list} -- Number of neurons in each linear layer 
-                represented as a list. The length of the list determines the 
+            - neurons {list} -- Number of neurons in each linear layer
+                represented as a list. The length of the list determines the
                 number of linear layers.
             - activations {list} -- List of the activation functions to apply 
                 to the output of each linear layer.
@@ -368,7 +371,16 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._layers = None
+        print(activations)
+
+        layers = []
+
+        for i in range(-1, len(neurons) - 1):
+            layers.append(LinearLayer(neurons[i] if i > -1 else input_dim, neurons[i + 1]))
+            layers.append(activationLayer[activations[i + 1]])
+
+        self._layers = layers
+
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -612,7 +624,7 @@ class Preprocessor(object):
 
     def revert(self, data):
         """
-        Revert the pre-processing operations to retreive the original dataset.
+        Revert the pre-processing operations to retrieve the original dataset.
 
         Arguments:
             data {np.ndarray} dataset for which to revert normalization.
