@@ -341,7 +341,7 @@ class LinearLayer(Layer):
         #######################################################################
 
 
-activationLayer = {
+activation_layers = {
     "relu": ReluLayer(),
     "sigmoid": SigmoidLayer()
 }
@@ -381,7 +381,7 @@ class MultiLayerNetwork(object):
             layers.append(LinearLayer(neurons[i] if i > -1 else input_dim, neurons[i + 1]))
 
             if activations[i + 1] != "identity":
-                layers.append(activationLayer[activations[i + 1]])
+                layers.append(activation_layers[activations[i + 1]])
 
         self._layers = layers
 
@@ -489,6 +489,12 @@ def load_network(fpath):
     return network
 
 
+loss_layers = {
+    "mse": MSELossLayer(),
+    "cross_entropy": CrossEntropyLossLayer()
+}
+
+
 class Trainer(object):
     """
     Trainer: Object that manages the training of a neural network.
@@ -526,7 +532,9 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._loss_layer = None
+
+        self._loss_layer = loss_layers[loss_fun]
+
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -539,8 +547,8 @@ class Trainer(object):
         Arguments:
             - input_dataset {np.ndarray} -- Array of input features, of shape
                 (#_data_points, n_features).
-            - target_dataset {np.ndarray} -- Array of corresponding targets, of
-                shape (#_data_points, #output_neurons).
+            - target_dataset {np.ndarray} -- Array of corresponding targets, of shape
+                (#_data_points, #output_neurons).
 
         Returns: 
             - {np.ndarray} -- shuffled inputs.
@@ -549,7 +557,10 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        perm = np.random.permutation(len(input_dataset))
+
+        return input_dataset[perm], target_dataset[perm]
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -572,13 +583,29 @@ class Trainer(object):
         Arguments:
             - input_dataset {np.ndarray} -- Array of input features, of shape
                 (#_training_data_points, n_features).
-            - target_dataset {np.ndarray} -- Array of corresponding targets, of
-                shape (#_training_data_points, #output_neurons).
+            - target_dataset {np.ndarray} -- Array of corresponding targets, of shape
+                (#_training_data_points, #output_neurons).
         """
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        for i in range(0, self.nb_epoch):
+            epoch_input, epoch_target = self.shuffle(input_dataset,
+                                                     target_dataset) if self.shuffle_flag else input_dataset, target_dataset
+
+            input_batches = np.array_split(epoch_input, self.batch_size)
+            target_batches = np.array_split(epoch_target, self.batch_size)
+
+            for j in range(0, len(input_batches)):
+                output = self.network.forward(input_batches[j])
+
+                self._loss_layer.forward(output, target_batches[j])
+
+                self.network.backward(self._loss_layer.backward())
+
+                self.network.update_params(self.learning_rate)
+
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -591,13 +618,14 @@ class Trainer(object):
         Arguments:
             - input_dataset {np.ndarray} -- Array of input features, of shape
                 (#_evaluation_data_points, n_features).
-            - target_dataset {np.ndarray} -- Array of corresponding targets, of
-                shape (#_evaluation_data_points, #output_neurons).
+            - target_dataset {np.ndarray} -- Array of corresponding targets, of shape
+                (#_evaluation_data_points, #output_neurons).
         """
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        return self._loss_layer.forward(input_dataset, target_dataset)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
