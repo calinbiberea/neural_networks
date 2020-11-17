@@ -673,7 +673,10 @@ class Preprocessor(object):
         #######################################################################
 
         def normalize(feat, norm_param):
-            return (feat - norm_param["min"]) / (norm_param["max"] - norm_param["min"])
+            if norm_param["min"] != norm_param["max"]:
+                return (feat - norm_param["min"]) / (norm_param["max"] - norm_param["min"])
+            else:
+                return feat - norm_param["min"] + 1
 
         norm_params = self.norm_params
 
