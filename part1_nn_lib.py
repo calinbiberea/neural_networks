@@ -163,9 +163,9 @@ class SigmoidLayer(Layer):
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        var = np.multiply(grad_z, np.vectorize(sigmoid_derivative)(self._cache_current.x))
+        var = np.multiply(grad_z, np.vectorize(sigmoid_derivative)(self._cache_current["x"]))
         print(var)
-        return np.multiply(grad_z, np.vectorize(sigmoid_derivative)(self._cache_current.x))
+        return np.multiply(grad_z, np.vectorize(sigmoid_derivative)(self._cache_current["x"]))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -667,3 +667,5 @@ if __name__ == "__main__":
 
     layer = SigmoidLayer()
     outputs = layer.forward(np.ones(10))
+
+    layer.backward(np.ones(10))
