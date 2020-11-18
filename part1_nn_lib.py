@@ -650,7 +650,7 @@ class Preprocessor(object):
         #                       ** START OF YOUR CODE **
         #######################################################################
         minis = data.min(axis=0)
-        maxes = data.min(axis=0)
+        maxes = data.max(axis=0)
         self.norm_params = {
             "minis": minis,
             "maxes": maxes,
