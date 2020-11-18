@@ -1,6 +1,5 @@
 import numpy as np
 import pickle
-import functools
 
 
 def xavier_init(size, gain=1.0):
@@ -650,9 +649,12 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
-        self.norm_params = [{"min": np.amin(feat), "max": np.amax(feat)} for feat in data.T]
-
+        minis = np.amin(data, axis=0)
+        maxes = np.amax(data, axis=0)
+        self.norm_params = {
+            "minis": minis,
+            "maxes": maxes,
+        }
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -671,17 +673,14 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
-        def normalize(feat, norm_param):
-            if norm_param["min"] != norm_param["max"]:
-                return (feat - norm_param["min"]) / (norm_param["max"] - norm_param["min"])
-            else:
-                return feat - norm_param["min"] + 1
+        def normalize(feature_column, minim, maxim):
+            return (feature_column - minim) / (maxim - minim)
 
         norm_params = self.norm_params
+        transpose = data.T
 
-        return np.array([normalize(data.T[i], norm_params[i])
-                         for i in range(0, len(norm_params))]).T
+        return np.array([normalize(transpose[i], norm_params["minis"][i], norm_params["maxes"][i])
+                         for i in range(0, len(data[0]))]).T
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -701,14 +700,14 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
-        def unnormalize(feat, norm_param):
-            return feat * (norm_param["max"] - norm_param["min"]) + norm_param["min"]
+        def denormalize(feature_column, minim, maxim):
+            return feature_column * (maxim - minim) + minim
 
         norm_params = self.norm_params
+        transpose = data.T
 
-        return np.array([unnormalize(data.T[i], norm_params[i])
-                         for i in range(0, len(norm_params))]).T
+        return np.array([denormalize(transpose[i], norm_params["minis"][i], norm_params["maxes"][i])
+                         for i in range(0, len(data[0]))]).T
 
         #######################################################################
         #                       ** END OF YOUR CODE **
