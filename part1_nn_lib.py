@@ -681,7 +681,7 @@ class Preprocessor(object):
         transpose = data.T
 
         return np.array([normalize(transpose[i], mins[i], maxs[i])
-                         for i in range(0, len(mins))]).T
+                         for i in range(0, len(data[0]))]).T
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -711,7 +711,7 @@ class Preprocessor(object):
         transpose = data.T
 
         return np.array([denormalize(transpose[i], mins[i], maxs[i])
-                         for i in range(0, len(mins))]).T
+                         for i in range(0, len(data[0]))]).T
 
         #######################################################################
         #                       ** END OF YOUR CODE **
