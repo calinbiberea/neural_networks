@@ -649,8 +649,8 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        minis = np.amin(data, axis=0)
-        maxes = np.amax(data, axis=0)
+        minis = data.min(axis=0)
+        maxes = data.min(axis=0)
         self.norm_params = {
             "minis": minis,
             "maxes": maxes,
