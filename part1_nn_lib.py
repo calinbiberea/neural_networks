@@ -649,12 +649,10 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        minis = data.min(axis=0)
-        maxes = data.max(axis=0)
-        self.norm_params = {
-            "minis": minis,
-            "maxes": maxes,
-        }
+
+        self.mins = data.min(axis=0)
+        self.maxs = data.max(axis=0)
+
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -673,14 +671,17 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+
         def normalize(feature_column, minim, maxim):
             return (feature_column - minim) / (maxim - minim)
 
-        norm_params = self.norm_params
+        mins = self.mins
+        maxs = self.maxs
+
         transpose = data.T
 
-        return np.array([normalize(transpose[i], norm_params["minis"][i], norm_params["maxes"][i])
-                         for i in range(0, len(data[0]))]).T
+        return np.array([normalize(transpose[i], mins[i], maxs[i])
+                         for i in range(0, len(mins))]).T
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -700,14 +701,17 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+
         def denormalize(feature_column, minim, maxim):
             return feature_column * (maxim - minim) + minim
 
-        norm_params = self.norm_params
+        mins = self.mins
+        maxs = self.maxs
+
         transpose = data.T
 
-        return np.array([denormalize(transpose[i], norm_params["minis"][i], norm_params["maxes"][i])
-                         for i in range(0, len(data[0]))]).T
+        return np.array([denormalize(transpose[i], mins[i], maxs[i])
+                         for i in range(0, len(mins))]).T
 
         #######################################################################
         #                       ** END OF YOUR CODE **
