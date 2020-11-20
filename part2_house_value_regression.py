@@ -1,11 +1,13 @@
 import torch
 import pickle
-import numpy as np
 import pandas as pd
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import MinMaxScaler
+
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch = 1000):
+    def __init__(self, x, preprocessor_params, nb_epoch=1000):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -24,17 +26,18 @@ class Regressor():
         #######################################################################
 
         # Replace this code with your own
-        X, _ = self._preprocessor(x, training = True)
+        X, _ = self._preprocessor(x, training=True)
         self.input_size = X.shape[1]
         self.output_size = 1
-        self.nb_epoch = nb_epoch 
+        self.nb_epoch = nb_epoch
+        self.preprocessor_params = preprocessor_params
         return
 
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
 
-    def _preprocessor(self, x, y = None, training = False):
+    def _preprocessor(self, x, y=None, training=False):
         """ 
         Preprocess input of the network.
           
@@ -59,13 +62,48 @@ class Regressor():
 
         # Replace this code with your own
         # Return preprocessed x and y, return None for y if it was None
-        return x, (y if isinstance(y, pd.DataFrame) else None)
+
+        # Transform x into numpy nd_array
+        # First fill all the empty values, then binarize the 9th column of the dataset (ocean_proximity)
+        x.fillna(0)
+        if training:
+            lb = LabelBinarizer()
+            new_feature_names = x["ocean_proximity"].drop_duplicates().tolist()
+            # print("New features: " + str(new_feature_names))
+            encodings = pd.DataFrame(lb.fit_transform(x["ocean_proximity"]), columns=new_feature_names)
+            # print(encodings)
+            encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], encodings], axis=1)
+            # print("Encoded Frame: \n" + str(encoded_x) + "\n")
+            # print(encodings.drop_duplicates().values)
+            self.preprocessor_params = dict(list(zip(lb.classes_, encodings.drop_duplicates().values)))
+            # print("Dictionary: \n" + str(self.preprocessor_params) + "\n")
+        else:
+            new_feature_names = list(self.preprocessor_params.keys())
+            encodings = pd.DataFrame(map(lambda val: self.preprocessor_params[val], x["ocean_proximity"]),
+                                     columns=new_feature_names)
+            # print("ELSE CASE ENCODINGS: \n" + str(encodings) + "\n")
+            encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], encodings], axis=1)
+            # print("Encoded Frame: \n" + str(encoded_x) + "\n")
+
+            # defs = pd.DataFrame()
+            # for key in self.preprocessor_params.keys():
+                # defs = pd.concat([defs, self.preprocessor_params[key]])
+            # encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], defs], axis=1)
+
+        normalised_X = pd.DataFrame(MinMaxScaler().fit_transform(encoded_x), columns=encoded_x.columns)
+        # print("Normalised X: \n" + str(normalised_X) + "\n")
+
+        tensor_X = torch.tensor(normalised_X.values)
+        # print("Tensor X: \n" + str(tensor_X) + "\n")
+
+        tensor_Y = torch.tensor(y.fillna(0).values) if isinstance(y, pd.DataFrame) else None
+
+        return tensor_X, tensor_Y
 
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
 
-        
     def fit(self, x, y):
         """
         Regressor training function
@@ -84,14 +122,13 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, Y = self._preprocessor(x, y = y, training = True) # Do not forget
+        X, Y = self._preprocessor(x, y=y, training=True)  # Do not forget
         return self
 
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
 
-            
     def predict(self, x):
         """
         Ouput the value corresponding to an input x.
@@ -109,7 +146,7 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, _ = self._preprocessor(x, training = False) # Do not forget
+        X, _ = self._preprocessor(x, training=False)  # Do not forget
         pass
 
         #######################################################################
@@ -134,15 +171,15 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, Y = self._preprocessor(x, y = y, training = False) # Do not forget
-        return 0 # Replace this code with your own
+        X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
+        return 0  # Replace this code with your own
 
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
 
 
-def save_regressor(trained_model): 
+def save_regressor(trained_model):
     """ 
     Utility function to save the trained regressor model in part2_model.pickle.
     """
@@ -152,7 +189,7 @@ def save_regressor(trained_model):
     print("\nSaved model in part2_model.pickle\n")
 
 
-def load_regressor(): 
+def load_regressor():
     """ 
     Utility function to load the trained regressor model in part2_model.pickle.
     """
@@ -163,8 +200,7 @@ def load_regressor():
     return trained_model
 
 
-
-def RegressorHyperParameterSearch(): 
+def RegressorHyperParameterSearch():
     # Ensure to add whatever inputs you deem necessary to this function
     """
     Performs a hyper-parameter for fine-tuning the regressor implemented 
@@ -189,25 +225,25 @@ def RegressorHyperParameterSearch():
     #######################################################################
 
 
-
 def example_main():
-
     output_label = "median_house_value"
 
     # Use pandas to read CSV data as it contains various object types
     # Feel free to use another CSV reader tool
     # But remember that LabTS tests take Pandas Dataframe as inputs
-    data = pd.read_csv("housing.csv") 
+    data = pd.read_csv("housing.csv")
 
     # Spliting input and output
     x_train = data.loc[:, data.columns != output_label]
     y_train = data.loc[:, [output_label]]
 
+    # print(y_train)
+
     # Training
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
     # to make sure the model isn't overfitting
-    regressor = Regressor(x_train, nb_epoch = 10)
+    regressor = Regressor(x_train, {}, nb_epoch=10)
     regressor.fit(x_train, y_train)
     save_regressor(regressor)
 
@@ -218,4 +254,3 @@ def example_main():
 
 if __name__ == "__main__":
     example_main()
-
