@@ -1,6 +1,7 @@
 import torch
 import pickle
 import pandas as pd
+import random
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.preprocessing import MinMaxScaler
 
@@ -65,10 +66,10 @@ class Regressor():
 
         # Transform x into numpy nd_array
         # First fill all the empty values, then binarize the 9th column of the dataset (ocean_proximity)
-        x.fillna(0)
         if training:
             lb = LabelBinarizer()
             new_feature_names = list(x["ocean_proximity"].drop_duplicates())
+            x["ocean_proximity"].fillna(random.choice(new_feature_names))
             # print("New features: " + str(new_feature_names))
             encodings = pd.DataFrame(lb.fit_transform(x["ocean_proximity"]), columns=new_feature_names)
             # print("NORMAL CASE ENCODINGS: \n" + str(encodings) + "\n")
@@ -77,14 +78,18 @@ class Regressor():
             # print("Dictionary: \n" + str(self.preprocessor_params) + "\n")
         else:
             new_feature_names = list(self.preprocessor_params.keys())
+            # print("New features: " + str(new_feature_names))
             encodings = pd.DataFrame(map(lambda val: self.preprocessor_params[val], x["ocean_proximity"]),
                                      columns=new_feature_names)
             # print("ELSE CASE ENCODINGS: \n" + str(encodings) + "\n")
 
-        encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], encodings], axis=1)
+        encoded_X = pd.concat([x.loc[:, x.columns != "ocean_proximity"], encodings], axis=1)
         # print("Encoded Frame: \n" + str(encoded_x) + "\n")
 
-        normalised_X = pd.DataFrame(MinMaxScaler().fit_transform(encoded_x), columns=encoded_x.columns)
+        encoded_X.fillna(0)
+        # print("Encoded Frame: \n" + str(encoded_X) + "\n")
+
+        normalised_X = pd.DataFrame(MinMaxScaler().fit_transform(encoded_X), columns=encoded_X.columns)
         # print("Normalised X: \n" + str(normalised_X) + "\n")
 
         tensor_X = torch.tensor(normalised_X.values)
