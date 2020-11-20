@@ -72,8 +72,6 @@ class Regressor():
             # print("New features: " + str(new_feature_names))
             encodings = pd.DataFrame(lb.fit_transform(x["ocean_proximity"]), columns=new_feature_names)
             # print(encodings)
-            encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], encodings], axis=1)
-            # print("Encoded Frame: \n" + str(encoded_x) + "\n")
             # print(encodings.drop_duplicates().values)
             self.preprocessor_params = dict(list(zip(lb.classes_, encodings.drop_duplicates().values)))
             # print("Dictionary: \n" + str(self.preprocessor_params) + "\n")
@@ -82,13 +80,9 @@ class Regressor():
             encodings = pd.DataFrame(map(lambda val: self.preprocessor_params[val], x["ocean_proximity"]),
                                      columns=new_feature_names)
             # print("ELSE CASE ENCODINGS: \n" + str(encodings) + "\n")
-            encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], encodings], axis=1)
-            # print("Encoded Frame: \n" + str(encoded_x) + "\n")
 
-            # defs = pd.DataFrame()
-            # for key in self.preprocessor_params.keys():
-                # defs = pd.concat([defs, self.preprocessor_params[key]])
-            # encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], defs], axis=1)
+        encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], encodings], axis=1)
+        # print("Encoded Frame: \n" + str(encoded_x) + "\n")
 
         normalised_X = pd.DataFrame(MinMaxScaler().fit_transform(encoded_x), columns=encoded_x.columns)
         # print("Normalised X: \n" + str(normalised_X) + "\n")
@@ -96,7 +90,11 @@ class Regressor():
         tensor_X = torch.tensor(normalised_X.values)
         # print("Tensor X: \n" + str(tensor_X) + "\n")
 
-        tensor_Y = torch.tensor(y.fillna(0).values) if isinstance(y, pd.DataFrame) else None
+        tensor_Y = torch.tensor(pd.DataFrame(
+            MinMaxScaler().fit_transform(y.fillna(0)), columns=["median_house_value"]).values) \
+            if isinstance(y, pd.DataFrame) else None
+
+        # print("Tensor Y: " + str(tensor_Y) + "\n")
 
         return tensor_X, tensor_Y
 
