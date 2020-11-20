@@ -90,9 +90,7 @@ class Regressor():
         tensor_X = torch.tensor(normalised_X.values)
         # print("Tensor X: \n" + str(tensor_X) + "\n")
 
-        tensor_Y = torch.tensor(pd.DataFrame(
-            MinMaxScaler().fit_transform(y.fillna(0)), columns=["median_house_value"]).values) \
-            if isinstance(y, pd.DataFrame) else None
+        tensor_Y = torch.tensor(y.values) if isinstance(y, pd.DataFrame) else None
 
         # print("Tensor Y: " + str(tensor_Y) + "\n")
 
