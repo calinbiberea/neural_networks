@@ -68,12 +68,12 @@ class Regressor():
         x.fillna(0)
         if training:
             lb = LabelBinarizer()
-            new_feature_names = x["ocean_proximity"].drop_duplicates().tolist()
+            new_feature_names = list(x["ocean_proximity"].drop_duplicates())
             # print("New features: " + str(new_feature_names))
             encodings = pd.DataFrame(lb.fit_transform(x["ocean_proximity"]), columns=new_feature_names)
-            # print(encodings)
+            # print("NORMAL CASE ENCODINGS: \n" + str(encodings) + "\n")
             # print(encodings.drop_duplicates().values)
-            self.preprocessor_params = dict(list(zip(lb.classes_, encodings.drop_duplicates().values)))
+            self.preprocessor_params = dict(list(zip(new_feature_names, encodings.drop_duplicates().values)))
             # print("Dictionary: \n" + str(self.preprocessor_params) + "\n")
         else:
             new_feature_names = list(self.preprocessor_params.keys())
