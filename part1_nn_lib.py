@@ -161,7 +161,7 @@ class SigmoidLayer(Layer):
 
         x = self._cache_current["x"]
 
-        return grad_z * sigmoid_derivative(x)
+        return np.multiply(grad_z, sigmoid_derivative(x))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -234,7 +234,7 @@ class ReluLayer(Layer):
 
         x = self._cache_current["x"]
 
-        return grad_z * relu_derivative(x)
+        return np.multiply(grad_z, relu_derivative(x))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
