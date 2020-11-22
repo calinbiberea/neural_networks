@@ -117,7 +117,7 @@ class Regressor:
         one_hot_encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], one_hot_encoded_pd_dataframe], axis=1)
 
         # Fill in any empty slots with 0s since now we operate with numbers
-        one_hot_encoded_x.fillna(0)
+        one_hot_encoded_x.fillna(0, inplace=True)
 
         # Normalise the integers for better results and save if training
         if training:
@@ -228,8 +228,9 @@ class Regressor:
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, _ = self._preprocessor(x, training=False)  # Do not forget
-        pass
+        preprocessed_x, _ = self._preprocessor(x, training=False)
+        predicted_y = self.neural_network(preprocessed_x)
+        return predicted_y
 
         #######################################################################
         #                       ** END OF YOUR CODE **
