@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.utils.data as Data
 import pickle
 import pandas as pd
 from sklearn.preprocessing import LabelBinarizer, MinMaxScaler
@@ -26,9 +27,10 @@ class NeuralNetwork(nn.Module):
         self.output_layer = nn.Linear(second_hidden_layer_size, output_size)
 
     def forward(self, x):
-        first_layer_output = torch.sigmoid(self.first_hidden_layer(x))
-        second_layer_output = torch.sigmoid(self.second_hidden_layer(first_layer_output))
-        return self.output_layer(second_layer_output)
+        x = torch.tanh(self.first_hidden_layer(x))
+        x = torch.tanh(self.second_hidden_layer(x))
+        x = self.output_layer(x)
+        return x
 
 
 class Regressor:
@@ -52,8 +54,8 @@ class Regressor:
         #######################################################################
 
         # First preprocess and set the neural network parameters
-        X, _ = self._preprocessor(x, training=True)
-        self.input_size = X.shape[1]
+        preprocessed_x, _ = self._preprocessor(x, training=True)
+        self.input_size = preprocessed_x.shape[1]
         self.output_size = 1
         self.nb_epoch = nb_epoch
 
@@ -136,8 +138,8 @@ class Regressor:
         normalised_x = min_max_scaler.transform(one_hot_encoded_x)
 
         # Create the tensors
-        tensor_x = torch.tensor(normalised_x)
-        tensor_y = torch.tensor(y.values) if y is not None else None
+        tensor_x = torch.tensor(normalised_x, dtype=torch.float)
+        tensor_y = torch.tensor(y.values, dtype=torch.float) if y is not None else None
 
         return tensor_x, tensor_y
 
@@ -164,7 +166,7 @@ class Regressor:
         #######################################################################
 
         # Normalise the data and convert the pandas dataframe to a tensor
-        training_x, target = self._preprocessor(x, y, training=True)
+        training_x, training_y = self._preprocessor(x, y, training=True)
 
         nb_epoch = self.nb_epoch
 
@@ -180,25 +182,25 @@ class Regressor:
         # Assume we have batches of size 50
         batch_size = 50
 
-        # Iterate the given number of epochs
-        for epoch in range(0, nb_epoch):
-            # Shuffle the data
-            permutation = torch.randperm(training_x.size()[0])
+        dataset = Data.TensorDataset(training_x, training_y)
 
+        loader = Data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+
+        # Train for given number of epochs
+        for epoch in range(nb_epoch):
             # Execute Mini-batched Gradient Descent
-            for i in range(0, training_x.size()[0], batch_size):
-                # Get a batch
-                indices = permutation[i:i + batch_size]
-                batch_x, batch_target = training_x[indices], target[indices]
+            for _, (batch_x, batch_y) in enumerate(loader):
+                batch_x.requires_grad_(True)
+                batch_y.requires_grad_(True)
 
                 # Zero the gradient buffers
                 optimizer.zero_grad()
 
                 # Execute forward pass through the network
-                batch_predicted = neural_network(batch_x.float())
+                prediction = neural_network(batch_x)
 
                 # Compute the loss
-                loss = loss_function(batch_predicted, batch_target.float())
+                loss = loss_function(prediction, batch_y)
 
                 # Do gradient descent
                 loss.backward()
@@ -259,9 +261,9 @@ class Regressor:
         preprocessed_x, preprocessed_y = self._preprocessor(x, y, training=False)
 
         with torch.no_grad():
-            prediction = self.neural_network(preprocessed_x.float())
+            prediction = self.neural_network(preprocessed_x)
 
-            return mean_squared_error(prediction, preprocessed_y.float())
+            return mean_squared_error(prediction, preprocessed_y)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
