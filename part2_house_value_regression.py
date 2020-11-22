@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import pickle
 import pandas as pd
 import random
@@ -6,7 +7,7 @@ from sklearn.preprocessing import LabelBinarizer
 from sklearn.preprocessing import MinMaxScaler
 
 
-class Regressor():
+class Regressor:
 
     def __init__(self, x, nb_epoch=1000):
         # You can add any input parameters you need
@@ -26,13 +27,14 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        # Replace this code with your own
+        # First preprocess and set the neural network parameters
         X, _ = self._preprocessor(x, training=True)
         self.input_size = X.shape[1]
         self.output_size = 1
         self.nb_epoch = nb_epoch
-        return
 
+        # Then construct the neural network itself
+        
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -238,7 +240,7 @@ def example_main():
     # Training
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
-    # to make sure the model isn't overfitting
+    # to make sure the model isn't over-fitting
     regressor = Regressor(x_train, nb_epoch=10)
     regressor.fit(x_train, y_train)
     save_regressor(regressor)
