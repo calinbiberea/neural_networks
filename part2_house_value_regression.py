@@ -195,10 +195,10 @@ class Regressor:
                 optimizer.zero_grad()
 
                 # Execute forward pass through the network
-                batch_predicted = neural_network(batch_x)
+                batch_predicted = neural_network(batch_x.float())
 
                 # Compute the loss
-                loss = loss_function(batch_predicted, batch_target)
+                loss = loss_function(batch_predicted, batch_target.float())
 
                 # Do gradient descent
                 loss.backward()
