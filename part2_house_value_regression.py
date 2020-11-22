@@ -1,10 +1,10 @@
-import numpy
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as Data
 import pickle
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import LabelBinarizer, MinMaxScaler
 from sklearn.metrics import mean_squared_error
 
@@ -125,22 +125,34 @@ class Regressor:
 
         # Normalise the integers for better results and save if training
         if training:
-            # Note that in training we do have the targets, so use those as well
-            min_max_scaler = MinMaxScaler()
+            # Scale features
+            feature_scaler = MinMaxScaler()
 
-            # Fit the data on the scaler
-            min_max_scaler.fit(one_hot_encoded_x)
+            # Fit the scaler to the features
+            feature_scaler.fit(one_hot_encoded_x)
 
-            # Save the min_max_scaler as a parameter to be later used for normalising
-            self.min_max_scaler = min_max_scaler
+            # Save the scaler for later normalisation
+            self.feature_scaler = feature_scaler
 
-        # Retrieve the min_max_scaler and normalise
-        min_max_scaler = self.min_max_scaler
-        normalised_x = min_max_scaler.transform(one_hot_encoded_x)
+            if y is not None:
+                # Scale output
+                output_scaler = MinMaxScaler()
+
+                # Fit scaler to the output
+                output_scaler.fit(y)
+
+                # Save the scaler for later normalisation
+                self.output_scaler = output_scaler
+
+        # Normalise features
+        normalised_x = self.feature_scaler.transform(one_hot_encoded_x)
+
+        normalised_y = self.output_scaler.transform(y) if y is not None else None
 
         # Create the tensors
         tensor_x = torch.tensor(normalised_x, dtype=torch.float)
-        tensor_y = torch.tensor(y.values, dtype=torch.float) if y is not None else None
+        tensor_y = \
+            torch.tensor(normalised_y, dtype=torch.float) if normalised_y is not None else None
 
         return tensor_x, tensor_y
 
@@ -235,7 +247,9 @@ class Regressor:
         preprocessed_x, _ = self._preprocessor(x, training=False)
 
         with torch.no_grad():
-            return self.neural_network(preprocessed_x).numpy()
+            prediction = self.neural_network(preprocessed_x).numpy()
+
+            return self.output_scaler.inverse_transform(prediction)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -259,12 +273,14 @@ class Regressor:
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        preprocessed_x, preprocessed_y = self._preprocessor(x, y, training=False)
+        preprocessed_x, _ = self._preprocessor(x, y, training=False)
 
         with torch.no_grad():
             prediction = self.neural_network(preprocessed_x)
 
-            return numpy.sqrt(mean_squared_error(prediction, preprocessed_y))
+            rescaled_prediction = self.output_scaler.inverse_transform(prediction)
+
+            return np.sqrt(mean_squared_error(rescaled_prediction, y))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
