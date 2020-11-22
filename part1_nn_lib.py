@@ -135,7 +135,7 @@ class SigmoidLayer(Layer):
 
         self._cache_current = {"x": x}
 
-        return sigmoid(x)
+        return np.vectorize(sigmoid)(x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -161,7 +161,7 @@ class SigmoidLayer(Layer):
 
         x = self._cache_current["x"]
 
-        return np.multiply(grad_z, sigmoid_derivative(x))
+        return np.multiply(grad_z, np.vectorize(sigmoid_derivative)(x))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -208,7 +208,7 @@ class ReluLayer(Layer):
 
         self._cache_current = {"x": x}
 
-        return relu(x)
+        return np.vectorize(relu)(x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -234,7 +234,7 @@ class ReluLayer(Layer):
 
         x = self._cache_current["x"]
 
-        return np.multiply(grad_z, relu_derivative(x))
+        return np.multiply(grad_z, np.vectorize(relu_derivative)(x))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
