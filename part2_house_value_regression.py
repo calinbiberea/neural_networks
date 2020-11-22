@@ -28,7 +28,7 @@ class NeuralNetwork(nn.Module):
         self.output_layer = nn.Linear(second_hidden_layer_size, output_size)
 
     def forward(self, x):
-        x = torch.sigmoid(self.first_hidden_layer(x))
+        x = torch.tanh(self.first_hidden_layer(x))
         x = torch.tanh(self.second_hidden_layer(x))
         x = self.output_layer(x)
         return x
@@ -174,12 +174,14 @@ class Regressor:
         # Get the network as well
         neural_network = self.neural_network
 
+        # Create optimizer
+        optimizer = optim.SGD(neural_network.parameters(), lr=0.01)
+
         # Use mean squared error for calculating the loss
         loss_function = nn.MSELoss()
 
-        # Assume we have batches of size 1000
-        batch_size = 1000
-        learning_rate = 0.01
+        # Assume we have batches of size 50
+        batch_size = 50
 
         dataset = Data.TensorDataset(training_x, training_y)
 
@@ -188,21 +190,24 @@ class Regressor:
         # Train for given number of epochs
         for epoch in range(nb_epoch):
             # Execute Mini-batched Gradient Descent
-            for _, (batch_x, batch_y) in enumerate(loader):
-                # Clear the existing gradients to avoid accumulating
-                neural_network.zero_grad()
+            for batch_x, batch_y in loader:
+                batch_x.requires_grad_(True)
+                batch_y.requires_grad_(True)
 
                 # Execute forward pass through the network
                 prediction = neural_network(batch_x)
 
                 # Compute the loss
-                loss = torch.sqrt(loss_function(prediction, batch_y))
+                loss = loss_function(prediction, batch_y)
+
+                # Zero the gradient buffers
+                optimizer.zero_grad()
 
                 # Do gradient descent
                 loss.backward()
 
-                for layer in neural_network.parameters():
-                    layer.data.sub_(layer.grad.data * learning_rate)
+                # Update parameters
+                optimizer.step()
 
         return self
 
