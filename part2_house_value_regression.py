@@ -42,16 +42,16 @@ class Regressor():
         Preprocess input of the network.
           
         Arguments:
-            - x {pd.DataFrame} -- Raw input array of shape 
+            - x {pd.DataFrame} -- Raw input array of shape
                 (batch_size, input_size).
             - y {pd.DataFrame} -- Raw target array of shape (batch_size, 1).
-            - training {boolean} -- Boolean indicating if we are training or 
+            - training {boolean} -- Boolean indicating if we are training or
                 testing the model.
 
         Returns:
-            - {torch.tensor} -- Preprocessed input array of size 
+            - {torch.tensor} -- Preprocessed input array of size
                 (batch_size, input_size).
-            - {torch.tensor} -- Preprocessed target array of size 
+            - {torch.tensor} -- Preprocessed target array of size
                 (batch_size, 1).
 
         """
@@ -129,14 +129,14 @@ class Regressor():
 
     def predict(self, x):
         """
-        Ouput the value corresponding to an input x.
+        Output the value corresponding to an input x.
 
         Arguments:
             x {pd.DataFrame} -- Raw input array of shape 
                 (batch_size, input_size).
 
         Returns:
-            {np.darray} -- Predicted value for the given input (batch_size, 1).
+            {np.ndarray} -- Predicted value for the given input (batch_size, 1).
 
         """
 
@@ -158,7 +158,7 @@ class Regressor():
         Arguments:
             - x {pd.DataFrame} -- Raw input array of shape 
                 (batch_size, input_size).
-            - y {pd.DataFrame} -- Raw ouput array of shape (batch_size, 1).
+            - y {pd.DataFrame} -- Raw output array of shape (batch_size, 1).
 
         Returns:
             {float} -- Quantification of the efficiency of the model.
@@ -231,7 +231,7 @@ def example_main():
     # But remember that LabTS tests take Pandas Dataframe as inputs
     data = pd.read_csv("housing.csv")
 
-    # Spliting input and output
+    # Splitting input and output
     x_train = data.loc[:, data.columns != output_label]
     y_train = data.loc[:, [output_label]]
 

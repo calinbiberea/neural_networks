@@ -93,17 +93,16 @@ class CrossEntropyLossLayer(Layer):
         return -1 / n_obs * (y_target - probs)
 
 
-"""
-Sigmoid Function and the Derivative
-"""
-
+# Sigmoid function and derivative
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
 def sigmoid_derivative(x):
-    return sigmoid(x) * (1 - sigmoid(x))
+    sig = sigmoid(x)
+
+    return sig * (1 - sig)
 
 
 class SigmoidLayer(Layer):
@@ -136,7 +135,7 @@ class SigmoidLayer(Layer):
 
         self._cache_current = {"x": x}
 
-        return np.vectorize(sigmoid)(x)
+        return sigmoid(x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -162,7 +161,7 @@ class SigmoidLayer(Layer):
 
         x = self._cache_current["x"]
 
-        return np.multiply(grad_z, np.vectorize(sigmoid_derivative)(x))
+        return grad_z * sigmoid_derivative(x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -171,10 +170,12 @@ class SigmoidLayer(Layer):
 
 # ReLU function and derivative
 
-def relu(x): return max(x, 0)
+def relu(x):
+    return max(x, 0)
 
 
-def relu_derivative(x): return 1 if x > 0 else 0
+def relu_derivative(x):
+    return 1 if x > 0 else 0
 
 
 class ReluLayer(Layer):
@@ -207,7 +208,7 @@ class ReluLayer(Layer):
 
         self._cache_current = {"x": x}
 
-        return np.vectorize(relu)(x)
+        return relu(x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -233,7 +234,7 @@ class ReluLayer(Layer):
 
         x = self._cache_current["x"]
 
-        return np.multiply(grad_z, np.vectorize(relu_derivative)(x))
+        return grad_z * relu_derivative(x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
