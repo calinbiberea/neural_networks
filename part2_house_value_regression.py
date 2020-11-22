@@ -189,18 +189,18 @@ class Regressor:
         # Train for given number of epochs
         for epoch in range(nb_epoch):
             # Execute Mini-batched Gradient Descent
-            for _, (batch_x, batch_y) in enumerate(loader):
+            for batch_x, batch_y in loader:
                 batch_x.requires_grad_(True)
                 batch_y.requires_grad_(True)
-
-                # Zero the gradient buffers
-                optimizer.zero_grad()
 
                 # Execute forward pass through the network
                 prediction = neural_network(batch_x)
 
                 # Compute the loss
                 loss = loss_function(prediction, batch_y)
+
+                # Zero the gradient buffers
+                optimizer.zero_grad()
 
                 # Do gradient descent
                 loss.backward()
