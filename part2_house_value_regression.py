@@ -120,8 +120,11 @@ class Regressor:
         one_hot_encoded_x = pd.concat(
             [x.loc[:, x.columns != "ocean_proximity"], one_hot_encoded_pd_dataframe], axis=1)
 
+        # Get the average of every column
+        means = one_hot_encoded_x.mean(axis=0)
+
         # Fill in any empty slots with 0s since now we operate with numbers
-        one_hot_encoded_x.fillna(0, inplace=True)
+        one_hot_encoded_x.fillna(means, inplace=True)
 
         # Normalise the integers for better results and save if training
         if training:
