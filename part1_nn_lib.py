@@ -379,8 +379,10 @@ class MultiLayerNetwork(object):
         for i in range(-1, len(neurons) - 1):
             layers.append(LinearLayer(neurons[i] if i > -1 else input_dim, neurons[i + 1]))
 
-            if activations[i + 1] != "identity":
-                layers.append(activation_layers[activations[i + 1]])
+            if activations[i + 1] == "relu":
+                layers.append(ReluLayer())
+            elif activations[i + 1] == "sigmoid":
+                layers.append(SigmoidLayer())
 
         self._layers = layers
 
@@ -411,8 +413,6 @@ class MultiLayerNetwork(object):
             output = layers[i].forward(output)
 
         return output
-
-        # return functools.reduce(lambda acc, layer : layer.forward(acc), layers, x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
