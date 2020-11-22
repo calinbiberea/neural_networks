@@ -163,10 +163,40 @@ class Regressor:
         #######################################################################
 
         # Normalise the data and convert the pandas dataframe to a tensor
-        training_x, training_y = self._preprocessor(x, y=y, training=True)
+        training_x, target = self._preprocessor(x, y=y, training=True)
+
+        # Get the network as well
+        neural_network = self.neural_network
+
+        # Use mean squared error for calculating the loss
+        loss_function = nn.MSELoss()
+
+        # Learning rate default
+        learning_rate = 0.01
+
+        # Assume we have batches of size 50
+        batch_size = 50
 
         # Iterate the given number of epochs
+        for epoch in range(0, self.nb_epoch):
+            # Shuffle the data
+            permutation = torch.randperm(training_x.size()[0])
 
+            for i in range(0, training_x.size()[0], batch_size):
+                # Get a batch
+                indices = permutation[i:i + batch_size]
+                batch_x, batch_y = training_x[indices], target[indices]
+
+                # Execute the network
+                output = neural_network(batch_x)
+
+                # Compute the loss
+                loss = loss_function(output, target)
+
+                # Do gradient descent
+                loss.backward()
+
+                # Update our paramters
 
         return self
 
