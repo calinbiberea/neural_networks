@@ -163,7 +163,7 @@ class Regressor:
         #######################################################################
 
         # Normalise the data and convert the pandas dataframe to a tensor
-        training_x, target = self._preprocessor(x, y=y, training=True)
+        training_x, target = self._preprocessor(x, y, training=True)
 
         nb_epoch = self.nb_epoch
 
@@ -229,8 +229,8 @@ class Regressor:
         #######################################################################
 
         preprocessed_x, _ = self._preprocessor(x, training=False)
-        predicted_y = self.neural_network(preprocessed_x)
-        return predicted_y
+
+        return self.neural_network(preprocessed_x).numpy()
 
         #######################################################################
         #                       ** END OF YOUR CODE **
