@@ -63,51 +63,57 @@ class Regressor:
         #######################################################################
         # Return preprocessed x and y, return None for y if it was None
 
-        # Transform x into numpy nd_array
-        # First fill all the empty values, then binarize the 9th column of the dataset (ocean_proximity)
+        # Deal with saving preprocess data into training data for one hot encoding
         if training:
             label_binarizer = LabelBinarizer()
-            label_binarizer.y_type_ = "multiclass"
 
+            # Fill possibly empty slots and get the encodings
             x["ocean_proximity"].fillna("N/A")
-
             ocean_proximity_features = list(x["ocean_proximity"].drop_duplicates())
 
-            print("New features: " + str(ocean_proximity_features))
+            # Make the label binarizer fit the current encodings
+            label_binarizer.fit(ocean_proximity_features)
 
-            print(x)
+            # Save the label binarizer
+            self._label_binarizer = label_binarizer
 
-            one_hot_vectors = pd.DataFrame(label_binarizer.fit_transform(x["ocean_proximity"]))
+            # Save the names of the created labels in the order saved in the binarizer
+            self._ocean_proximity_features = label_binarizer.classes_
 
-            self.preprocessor_params = dict(
-                list(zip(ocean_proximity_features, one_hot_vectors.drop_duplicates().values)))
-            # print("Dictionary: \n" + str(self.preprocessor_params) + "\n")
-        else:
-            ocean_proximity_features = list(self.preprocessor_params.keys())
-            # print("New features: " + str(ocean_proximity_features))
-            one_hot_vectors = pd.DataFrame(
-                map(lambda val: self.preprocessor_params[val], x["ocean_proximity"]),
-                columns=ocean_proximity_features)
-            # print("ELSE CASE ENCODINGS: \n" + str(one_hot_vectors) + "\n")
+        # Retrieve the label binarizer and transform the ocean proximity column
+        label_binarizer = self._label_binarizer
+        one_hot_encoded_ocean_proximity = label_binarizer.transform(x["ocean_proximity"])
 
-        encoded_X = pd.concat([x.loc[:, x.columns != "ocean_proximity"], one_hot_vectors], axis=1)
-        # print("Encoded Frame: \n" + str(encoded_x) + "\n")
+        # Create a panda dataframe for the new one hot encoded vector
+        one_hot_encoded_pd_dataframe = pd.DataFrame(one_hot_encoded_ocean_proximity,
+                                                    columns=self._ocean_proximity_features)
 
-        encoded_X.fillna(0)
-        # print("Encoded Frame: \n" + str(encoded_X) + "\n")
+        # Drop the obsolete ocean_proximity feature and introduce the one hot encoded vector
+        one_hot_encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], one_hot_encoded_pd_dataframe], axis=1)
 
-        normalised_X = pd.DataFrame(MinMaxScaler().fit_transform(encoded_X),
-                                    columns=encoded_X.columns)
-        # print("Normalised X: \n" + str(normalised_X) + "\n")
+        # Fill in any empty slots with 0s since now we operate with numbers
+        one_hot_encoded_x.fillna(0)
 
-        tensor_X = torch.tensor(normalised_X.values)
-        # print("Tensor X: \n" + str(tensor_X) + "\n")
+        # Normalise the integers for better results and save if training
+        if training:
+            # Note that in training we do have the targets, so use those as well
+            min_max_scaler = MinMaxScaler()
 
-        tensor_Y = torch.tensor(y.values) if isinstance(y, pd.DataFrame) else None
+            # Fit the data on the scaler
+            min_max_scaler.fit(one_hot_encoded_x)
 
-        # print("Tensor Y: " + str(tensor_Y) + "\n")
+            # Save the min_max_scaler as a parameter to be later used for normalising
+            self._min_max_scaler = min_max_scaler
 
-        return tensor_X, tensor_Y
+        # Retrieve the min_max_scaler and normalise
+        min_max_scaler = self._min_max_scaler
+        normalised_x = min_max_scaler.transform(one_hot_encoded_x)
+
+        # Create the tensors
+        tensor_x = torch.tensor(normalised_x)
+        tensor_y = torch.tensor(y.values) if y is not None else None
+
+        return tensor_x, tensor_y
 
         #######################################################################
         #                       ** END OF YOUR CODE **
