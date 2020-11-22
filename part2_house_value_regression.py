@@ -2,9 +2,33 @@ import torch
 import torch.nn as nn
 import pickle
 import pandas as pd
-import random
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.preprocessing import MinMaxScaler
+
+
+class NeuralNetwork(nn.Module):
+    """
+        The neural network class
+    """
+
+    def __init__(self, input_size, output_size):
+        super(NeuralNetwork, self).__init__()
+        # Input to hidden first size
+        first_hidden_layer_size = int(2 / 3 * input_size)
+        self.first_hidden_layer = nn.Linear(input_size, first_hidden_layer_size)
+
+        # First hidden layer to second hidden layer size
+        second_hidden_layer_size = int(2 / 3 * first_hidden_layer_size)
+        self.second_hidden_layer = nn.Linear(first_hidden_layer_size, second_hidden_layer_size)
+
+        # Second hidden layer to output layer
+        self.output_layer = nn.Linear(second_hidden_layer_size, output_size)
+
+    def forward(self, x):
+        first_layer_output = torch.sigmoid(self.first_hidden_layer(x))
+        second_layer_output = torch.sigmoid(self.second_hidden_layer(first_layer_output))
+        y = self.output_layer(second_layer_output)
+        return y
 
 
 class Regressor:
@@ -34,6 +58,7 @@ class Regressor:
         self.nb_epoch = nb_epoch
 
         # Then construct the neural network itself
+        self.neural_network = NeuralNetwork(self.input_size, self.output_size)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -75,18 +100,18 @@ class Regressor:
             label_binarizer.fit(ocean_proximity_features)
 
             # Save the label binarizer
-            self._label_binarizer = label_binarizer
+            self.label_binarizer = label_binarizer
 
             # Save the names of the created labels in the order saved in the binarizer
-            self._ocean_proximity_features = label_binarizer.classes_
+            self.ocean_proximity_features = label_binarizer.classes_
 
         # Retrieve the label binarizer and transform the ocean proximity column
-        label_binarizer = self._label_binarizer
+        label_binarizer = self.label_binarizer
         one_hot_encoded_ocean_proximity = label_binarizer.transform(x["ocean_proximity"])
 
         # Create a panda dataframe for the new one hot encoded vector
         one_hot_encoded_pd_dataframe = pd.DataFrame(one_hot_encoded_ocean_proximity,
-                                                    columns=self._ocean_proximity_features)
+                                                    columns=self.ocean_proximity_features)
 
         # Drop the obsolete ocean_proximity feature and introduce the one hot encoded vector
         one_hot_encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], one_hot_encoded_pd_dataframe], axis=1)
@@ -103,10 +128,10 @@ class Regressor:
             min_max_scaler.fit(one_hot_encoded_x)
 
             # Save the min_max_scaler as a parameter to be later used for normalising
-            self._min_max_scaler = min_max_scaler
+            self.min_max_scaler = min_max_scaler
 
         # Retrieve the min_max_scaler and normalise
-        min_max_scaler = self._min_max_scaler
+        min_max_scaler = self.min_max_scaler
         normalised_x = min_max_scaler.transform(one_hot_encoded_x)
 
         # Create the tensors
@@ -137,7 +162,12 @@ class Regressor:
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, Y = self._preprocessor(x, y=y, training=True)  # Do not forget
+        # Normalise the data and convert the pandas dataframe to a tensor
+        training_x, training_y = self._preprocessor(x, y=y, training=True)
+
+        # Iterate the given number of epochs
+
+
         return self
 
         #######################################################################
