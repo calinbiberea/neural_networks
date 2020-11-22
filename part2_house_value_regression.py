@@ -77,21 +77,20 @@ class Regressor:
 
             print(x)
 
-            encodings = pd.DataFrame(label_binarizer.fit_transform(x["ocean_proximity"]))
-            print("NORMAL CASE ENCODINGS: \n" + str(encodings) + "\n")
-            # print(encodings.drop_duplicates().values)
+            one_hot_vectors = pd.DataFrame(label_binarizer.fit_transform(x["ocean_proximity"]))
+
             self.preprocessor_params = dict(
-                list(zip(ocean_proximity_features, encodings.drop_duplicates().values)))
+                list(zip(ocean_proximity_features, one_hot_vectors.drop_duplicates().values)))
             # print("Dictionary: \n" + str(self.preprocessor_params) + "\n")
         else:
             ocean_proximity_features = list(self.preprocessor_params.keys())
             # print("New features: " + str(ocean_proximity_features))
-            encodings = pd.DataFrame(
+            one_hot_vectors = pd.DataFrame(
                 map(lambda val: self.preprocessor_params[val], x["ocean_proximity"]),
                 columns=ocean_proximity_features)
-            # print("ELSE CASE ENCODINGS: \n" + str(encodings) + "\n")
+            # print("ELSE CASE ENCODINGS: \n" + str(one_hot_vectors) + "\n")
 
-        encoded_X = pd.concat([x.loc[:, x.columns != "ocean_proximity"], encodings], axis=1)
+        encoded_X = pd.concat([x.loc[:, x.columns != "ocean_proximity"], one_hot_vectors], axis=1)
         # print("Encoded Frame: \n" + str(encoded_x) + "\n")
 
         encoded_X.fillna(0)
