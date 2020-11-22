@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
 import pickle
 import pandas as pd
 from sklearn.preprocessing import LabelBinarizer
@@ -25,10 +27,9 @@ class NeuralNetwork(nn.Module):
         self.output_layer = nn.Linear(second_hidden_layer_size, output_size)
 
     def forward(self, x):
-        first_layer_output = torch.sigmoid(self.first_hidden_layer(x))
-        second_layer_output = torch.sigmoid(self.second_hidden_layer(first_layer_output))
-        y = self.output_layer(second_layer_output)
-        return y
+        first_layer_output = F.sigmoid(self.first_hidden_layer(x))
+        second_layer_output = F.sigmoid(self.second_hidden_layer(first_layer_output))
+        return self.output_layer(second_layer_output)
 
 
 class Regressor:
@@ -165,38 +166,45 @@ class Regressor:
         # Normalise the data and convert the pandas dataframe to a tensor
         training_x, target = self._preprocessor(x, y=y, training=True)
 
+        nb_epoch = self.nb_epoch
+
         # Get the network as well
         neural_network = self.neural_network
 
+        # Create optimizer
+        optimizer = optim.SGD(neural_network.parameters(), lr=0.01)
+
         # Use mean squared error for calculating the loss
         loss_function = nn.MSELoss()
-
-        # Learning rate default
-        learning_rate = 0.01
 
         # Assume we have batches of size 50
         batch_size = 50
 
         # Iterate the given number of epochs
-        for epoch in range(0, self.nb_epoch):
+        for epoch in range(0, nb_epoch):
             # Shuffle the data
             permutation = torch.randperm(training_x.size()[0])
 
+            # Execute Mini-batched Gradient Descent
             for i in range(0, training_x.size()[0], batch_size):
                 # Get a batch
                 indices = permutation[i:i + batch_size]
-                batch_x, batch_y = training_x[indices], target[indices]
+                batch_x, batch_target = training_x[indices], target[indices]
 
-                # Execute the network
-                output = neural_network(batch_x)
+                # Zero the gradient buffers
+                optimizer.zero_grad()
+
+                # Execute forward pass through the network
+                batch_predicted = neural_network(batch_x)
 
                 # Compute the loss
-                loss = loss_function(output, target)
+                loss = loss_function(batch_predicted, batch_target)
 
                 # Do gradient descent
                 loss.backward()
 
-                # Update our paramters
+                # Update parameters
+                optimizer.step()
 
         return self
 
