@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 import pickle
 import pandas as pd
-from sklearn.preprocessing import LabelBinarizer
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import LabelBinarizer, MinMaxScaler
+from sklearn.metrics import mean_squared_error
 
 
 class NeuralNetwork(nn.Module):
@@ -231,7 +231,8 @@ class Regressor:
 
         preprocessed_x, _ = self._preprocessor(x, training=False)
 
-        return self.neural_network(preprocessed_x).numpy()
+        with torch.no_grad():
+            return self.neural_network(preprocessed_x).numpy()
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -255,8 +256,12 @@ class Regressor:
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, Y = self._preprocessor(x, y, training=False)
-        return 0  # Replace this code with your own
+        preprocessed_x, preprocessed_y = self._preprocessor(x, y, training=False)
+
+        with torch.no_grad():
+            prediction = self.neural_network(preprocessed_x.float())
+
+            return mean_squared_error(prediction, preprocessed_y.float())
 
         #######################################################################
         #                       ** END OF YOUR CODE **
