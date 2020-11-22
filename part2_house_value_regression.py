@@ -15,11 +15,11 @@ class NeuralNetwork(nn.Module):
     def __init__(self, input_size, output_size):
         super(NeuralNetwork, self).__init__()
         # Input to hidden first size
-        first_hidden_layer_size = int(2 / 3 * input_size)
+        first_hidden_layer_size = int((2 / 3) * input_size)
         self.first_hidden_layer = nn.Linear(input_size, first_hidden_layer_size)
 
         # First hidden layer to second hidden layer size
-        second_hidden_layer_size = int(2 / 3 * first_hidden_layer_size)
+        second_hidden_layer_size = int((2 / 3) * first_hidden_layer_size)
         self.second_hidden_layer = nn.Linear(first_hidden_layer_size, second_hidden_layer_size)
 
         # Second hidden layer to output layer
@@ -93,8 +93,8 @@ class Regressor:
             label_binarizer = LabelBinarizer()
 
             # Fill possibly empty slots and get the encodings
-            x["ocean_proximity"].fillna("N/A")
-            ocean_proximity_features = list(x["ocean_proximity"].drop_duplicates())
+            filled_ocean_proximities = x["ocean_proximity"].fillna("N/A")
+            ocean_proximity_features = list(filled_ocean_proximities.drop_duplicates())
 
             # Make the label binarizer fit the current encodings
             label_binarizer.fit(ocean_proximity_features)
@@ -114,10 +114,11 @@ class Regressor:
                                                     columns=self.ocean_proximity_features)
 
         # Drop the obsolete ocean_proximity feature and introduce the one hot encoded vector
-        one_hot_encoded_x = pd.concat([x.loc[:, x.columns != "ocean_proximity"], one_hot_encoded_pd_dataframe], axis=1)
+        one_hot_encoded_x = pd.concat(
+            [x.loc[:, x.columns != "ocean_proximity"], one_hot_encoded_pd_dataframe], axis=1)
 
         # Fill in any empty slots with 0s since now we operate with numbers
-        one_hot_encoded_x.fillna(0)
+        one_hot_encoded_x.fillna(0, inplace=True)
 
         # Normalise the integers for better results and save if training
         if training:
@@ -254,7 +255,7 @@ class Regressor:
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
+        X, Y = self._preprocessor(x, y, training=False)
         return 0  # Replace this code with your own
 
         #######################################################################
