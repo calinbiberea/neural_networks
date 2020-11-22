@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
 import pickle
 import pandas as pd
 from sklearn.preprocessing import LabelBinarizer
@@ -27,8 +26,8 @@ class NeuralNetwork(nn.Module):
         self.output_layer = nn.Linear(second_hidden_layer_size, output_size)
 
     def forward(self, x):
-        first_layer_output = F.sigmoid(self.first_hidden_layer(x))
-        second_layer_output = F.sigmoid(self.second_hidden_layer(first_layer_output))
+        first_layer_output = torch.sigmoid(self.first_hidden_layer(x))
+        second_layer_output = torch.sigmoid(self.second_hidden_layer(first_layer_output))
         return self.output_layer(second_layer_output)
 
 
