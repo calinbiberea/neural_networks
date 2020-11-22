@@ -1,3 +1,4 @@
+import numpy
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -6,29 +7,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelBinarizer, MinMaxScaler
 from sklearn.metrics import mean_squared_error
 
-
-class NeuralNetwork(nn.Module):
-    """
-        The neural network class
-    """
-
-    def __init__(self, input_size, output_size):
-        super(NeuralNetwork, self).__init__()
-        # Input to hidden first size
-        first_hidden_layer_size = int((2 / 3) * input_size)
-        self.first_hidden_layer = nn.Linear(input_size, first_hidden_layer_size)
-
-        # First hidden layer to second hidden layer size
-        second_hidden_layer_size = int((2 / 3) * first_hidden_layer_size)
-        self.second_hidden_layer = nn.Linear(first_hidden_layer_size, second_hidden_layer_size)
-
-        # Second hidden layer to output layer
-        self.output_layer = nn.Linear(second_hidden_layer_size, output_size)
-
-    def forward(self, x):
-        first_layer_output = torch.sigmoid(self.first_hidden_layer(x))
-        second_layer_output = torch.sigmoid(self.second_hidden_layer(first_layer_output))
-        return self.output_layer(second_layer_output)
+from part1_nn_lib import MultiLayerNetwork, Trainer
 
 
 class Regressor:
@@ -38,10 +17,10 @@ class Regressor:
         # Remember to set them with a default value for LabTS tests
         """ 
         Initialise the model.
-          
+
         Arguments:
-            - x {pd.DataFrame} -- Raw input data of shape 
-                (batch_size, input_size), used to compute the size 
+            - x {pd.DataFrame} -- Raw input data of shape
+                (batch_size, input_size), used to compute the size
                 of the network.
             - nb_epoch {int} -- number of epoch to train the network.
 
@@ -58,16 +37,21 @@ class Regressor:
         self.nb_epoch = nb_epoch
 
         # Then construct the neural network itself
-        self.neural_network = NeuralNetwork(self.input_size, self.output_size)
+        first_hidden_layer_size = int((2 / 3) * self.input_size)
+        # First hidden layer to second hidden layer size
+        second_hidden_layer_size = int((2 / 3) * first_hidden_layer_size)
+        neurons = [first_hidden_layer_size, second_hidden_layer_size, self.output_size]
+        activations = ["sigmoid", "relu", "identity"]
+        self.neural_network = MultiLayerNetwork(self.input_size, neurons, activations)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
 
     def _preprocessor(self, x, y=None, training=False):
-        """ 
+        """
         Preprocess input of the network.
-          
+
         Arguments:
             - x {pd.DataFrame} -- Raw input array of shape
                 (batch_size, input_size).
@@ -150,7 +134,7 @@ class Regressor:
         Regressor training function
 
         Arguments:
-            - x {pd.DataFrame} -- Raw input array of shape 
+            - x {pd.DataFrame} -- Raw input array of shape
                 (batch_size, input_size).
             - y {pd.DataFrame} -- Raw output array of shape (batch_size, 1).
 
@@ -166,45 +150,15 @@ class Regressor:
         # Normalise the data and convert the pandas dataframe to a tensor
         training_x, target = self._preprocessor(x, y, training=True)
 
-        nb_epoch = self.nb_epoch
-
-        # Get the network as well
-        neural_network = self.neural_network
-
-        # Create optimizer
-        optimizer = optim.SGD(neural_network.parameters(), lr=0.01)
-
-        # Use mean squared error for calculating the loss
-        loss_function = nn.MSELoss()
-
-        # Assume we have batches of size 50
-        batch_size = 50
-
-        # Iterate the given number of epochs
-        for epoch in range(0, nb_epoch):
-            # Shuffle the data
-            permutation = torch.randperm(training_x.size()[0])
-
-            # Execute Mini-batched Gradient Descent
-            for i in range(0, training_x.size()[0], batch_size):
-                # Get a batch
-                indices = permutation[i:i + batch_size]
-                batch_x, batch_target = training_x[indices], target[indices]
-
-                # Zero the gradient buffers
-                optimizer.zero_grad()
-
-                # Execute forward pass through the network
-                batch_predicted = neural_network(batch_x.float())
-
-                # Compute the loss
-                loss = loss_function(batch_predicted, batch_target.float())
-
-                # Do gradient descent
-                loss.backward()
-
-                # Update parameters
-                optimizer.step()
+        trainer = Trainer(
+            network=self.neural_network,
+            batch_size=500,
+            nb_epoch=self.nb_epoch,
+            learning_rate=0.01,
+            loss_fun="mse",
+            shuffle_flag=True,
+        )
+        trainer.train(training_x.numpy(), target.numpy())
 
         return self
 
@@ -217,7 +171,7 @@ class Regressor:
         Output the value corresponding to an input x.
 
         Arguments:
-            x {pd.DataFrame} -- Raw input array of shape 
+            x {pd.DataFrame} -- Raw input array of shape
                 (batch_size, input_size).
 
         Returns:
@@ -230,9 +184,7 @@ class Regressor:
         #######################################################################
 
         preprocessed_x, _ = self._preprocessor(x, training=False)
-
-        with torch.no_grad():
-            return self.neural_network(preprocessed_x).numpy()
+        return self.neural_network(preprocessed_x.numpy())
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -243,7 +195,7 @@ class Regressor:
         Function to evaluate the model accuracy on a validation dataset.
 
         Arguments:
-            - x {pd.DataFrame} -- Raw input array of shape 
+            - x {pd.DataFrame} -- Raw input array of shape
                 (batch_size, input_size).
             - y {pd.DataFrame} -- Raw output array of shape (batch_size, 1).
 
@@ -258,10 +210,9 @@ class Regressor:
 
         preprocessed_x, preprocessed_y = self._preprocessor(x, y, training=False)
 
-        with torch.no_grad():
-            prediction = self.neural_network(preprocessed_x.float())
+        prediction = self.neural_network(preprocessed_x.numpy())
 
-            return mean_squared_error(prediction, preprocessed_y.float())
+        return numpy.sqrt(mean_squared_error(prediction, preprocessed_y.numpy()))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -269,7 +220,7 @@ class Regressor:
 
 
 def save_regressor(trained_model):
-    """ 
+    """
     Utility function to save the trained regressor model in part2_model.pickle.
     """
     # If you alter this, make sure it works in tandem with load_regressor
@@ -279,7 +230,7 @@ def save_regressor(trained_model):
 
 
 def load_regressor():
-    """ 
+    """
     Utility function to load the trained regressor model in part2_model.pickle.
     """
     # If you alter this, make sure it works in tandem with save_regressor
@@ -292,12 +243,12 @@ def load_regressor():
 def RegressorHyperParameterSearch():
     # Ensure to add whatever inputs you deem necessary to this function
     """
-    Performs a hyper-parameter for fine-tuning the regressor implemented 
+    Performs a hyper-parameter for fine-tuning the regressor implemented
     in the Regressor class.
 
     Arguments:
         Add whatever inputs you need.
-        
+
     Returns:
         The function should return your optimised hyper-parameters. 
 
