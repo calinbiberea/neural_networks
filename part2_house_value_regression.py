@@ -16,21 +16,16 @@ class NeuralNetwork(nn.Module):
 
     def __init__(self, input_size, output_size):
         super(NeuralNetwork, self).__init__()
-        # Input to hidden first size
+        # Input to hidden
         first_hidden_layer_size = int((2 / 3) * input_size)
         self.first_hidden_layer = nn.Linear(input_size, first_hidden_layer_size)
 
-        # First hidden layer to second hidden layer size
-        second_hidden_layer_size = int((2 / 3) * first_hidden_layer_size)
-        self.second_hidden_layer = nn.Linear(first_hidden_layer_size, second_hidden_layer_size)
-
         # Second hidden layer to output layer
-        self.output_layer = nn.Linear(second_hidden_layer_size, output_size)
+        self.output_layer = nn.Linear(first_hidden_layer_size, output_size)
 
     def forward(self, x):
         x = torch.tanh(self.first_hidden_layer(x))
-        x = torch.tanh(self.second_hidden_layer(x))
-        x = self.output_layer(x)
+        x = torch.tanh(self.output_layer(x))
         return x
 
 
