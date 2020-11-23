@@ -185,7 +185,7 @@ class Regressor:
         neural_network = self.neural_network
 
         # Create optimizer
-        optimizer = optim.SGD(neural_network.parameters(), lr=0.01)
+        optimizer = optim.SGD(neural_network.parameters(), lr=0.15, momentum=0.8)
 
         # Use mean squared error for calculating the loss
         loss_function = nn.MSELoss()
@@ -306,7 +306,7 @@ def load_regressor():
     return trained_model
 
 
-def RegressorHyperParameterSearch(x_train, y_train):
+def RegressorHyperParameterSearch(x_train_val, y_train_val):
     # Ensure to add whatever inputs you deem necessary to this function
     """
     Performs a hyper-parameter for fine-tuning the regressor implemented 
@@ -324,9 +324,45 @@ def RegressorHyperParameterSearch(x_train, y_train):
     #                       ** START OF YOUR CODE **
     #######################################################################
 
-    # The first hyperparameter that is worth looking at is the number of epochs
+    # Tuning comes with the need for cross-validation, so do that
+    NUMBER_OF_FOLDS = 10
+    NUMBER_OF_DATA_POINTS = len(x_train_val)
+    FOLD_SIZE = int(NUMBER_OF_DATA_POINTS / NUMBER_OF_FOLDS)
+    splits_x = [x_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
+    splits_y = [y_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
 
-    return  # Return the chosen hyper parameters
+    # Given the size of our elements, remove one element from the dataset to not have obscure validation
+    del splits_x[-1]
+    del splits_y[-1]
+    NUMBER_OF_FOLDS = NUMBER_OF_FOLDS - 1
+
+    # The first hyperparameter that is worth looking at is the number of epochs
+    # Pick some epochs in an upper bounded range (which we find by testing)
+    EPOCH_TRIES = 20
+    EPOCH_COUNT_JUMP = 10
+    nb_epochs_choices = [EPOCH_COUNT_JUMP * i for i in range(1, EPOCH_TRIES + 1)]
+    nb_epochs_choices_scores = np.zeros(EPOCH_TRIES)
+
+    for i in range(NUMBER_OF_FOLDS):
+        training_x = pd.concat([splits_x[k] for k in range(NUMBER_OF_FOLDS) if k != i])
+        training_y = pd.concat([splits_y[k] for k in range(NUMBER_OF_FOLDS) if k != i])
+        validation_x = splits_x[i]
+        validation_y = splits_y[i]
+
+        for epoch_choice_index in range(EPOCH_TRIES):
+            nb_epoch = nb_epochs_choices[epoch_choice_index]
+            network = Regressor(training_x, nb_epoch=nb_epoch)
+            network.fit(training_x, training_y)
+
+            rmse = network.score(validation_x, validation_y)
+            nb_epochs_choices_scores[epoch_choice_index] = nb_epochs_choices_scores[epoch_choice_index] + rmse
+
+    nb_epochs_choices_scores = nb_epochs_choices_scores / NUMBER_OF_FOLDS
+    best_nb_epoch = (nb_epochs_choices_scores.argmin() + 1) * EPOCH_COUNT_JUMP
+    print("A decent number of epochs to run is: ")
+    print(best_nb_epoch)
+
+    return best_nb_epoch  # Return the chosen hyper parameters
 
     #######################################################################
     #                       ** END OF YOUR CODE **
@@ -338,7 +374,7 @@ def untuned_main(x_train, y_train, x_test, y_test):
     # This example trains on the whole available dataset.
     # You probably want to separate some held-out data
     # to make sure the model isn't over-fitting
-    regressor = Regressor(x_train, nb_epoch=150)
+    regressor = Regressor(x_train, nb_epoch=200)
     regressor.fit(x_train, y_train)
     save_regressor(regressor)
 
@@ -369,7 +405,18 @@ def example_main():
     test_x = testing_data.loc[:, testing_data.columns != output_label]
     test_y = testing_data.loc[:, [output_label]]
 
+    # In case you want to run an untuned regressor
     untuned_main(training_validation_x, training_validation_y, test_x, test_y)
+
+    nb_epoch = RegressorHyperParameterSearch(training_validation_x, training_validation_y)
+
+    regressor = Regressor(training_validation_x, nb_epoch=nb_epoch)
+    regressor.fit(training_validation_x, training_validation_y)
+    save_regressor(regressor)
+
+    # Error on testing data
+    error = regressor.score(test_x, test_y)
+    print("\nRegressor error: {}\n".format(error))
 
 
 if __name__ == "__main__":
