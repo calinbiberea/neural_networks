@@ -115,6 +115,8 @@ class Regressor:
         one_hot_encoded_x = pd.concat(
             [x.loc[:, x.columns != "ocean_proximity"], one_hot_encoded_pd_dataframe], axis=1)
 
+        print(one_hot_encoded_x)
+
         # Get the average of every column
         means = one_hot_encoded_x.mean(axis=0)
 
@@ -306,7 +308,7 @@ def load_regressor():
     return trained_model
 
 
-def RegressorHyperParameterSearch():
+def RegressorHyperParameterSearch(x_train, y_train):
     # Ensure to add whatever inputs you deem necessary to this function
     """
     Performs a hyper-parameter for fine-tuning the regressor implemented 
@@ -324,11 +326,27 @@ def RegressorHyperParameterSearch():
     #                       ** START OF YOUR CODE **
     #######################################################################
 
+    # The first hyperparameter that is worth looking at is the number of epochs
+
     return  # Return the chosen hyper parameters
 
     #######################################################################
     #                       ** END OF YOUR CODE **
     #######################################################################
+
+
+def untuned_main(x_train, y_train, x_test, y_test):
+    # Training
+    # This example trains on the whole available dataset.
+    # You probably want to separate some held-out data
+    # to make sure the model isn't over-fitting
+    regressor = Regressor(x_train, nb_epoch=150)
+    regressor.fit(x_train, y_train)
+    save_regressor(regressor)
+
+    # Error on testing data
+    error = regressor.score(x_test, y_test)
+    print("\nRegressor error: {}\n".format(error))
 
 
 def example_main():
@@ -339,21 +357,21 @@ def example_main():
     # But remember that LabTS tests take Pandas Dataframe as inputs
     data = pd.read_csv("housing.csv")
 
-    # Splitting input and output
-    x_train = data.loc[:, data.columns != output_label]
-    y_train = data.loc[:, [output_label]]
+    # Shuffle the data
+    shuffled_data = data.sample(frac=1)
 
-    # Training
-    # This example trains on the whole available dataset. 
-    # You probably want to separate some held-out data 
-    # to make sure the model isn't over-fitting
-    regressor = Regressor(x_train, nb_epoch=100)
-    regressor.fit(x_train, y_train)
-    save_regressor(regressor)
+    # Split data into training + validation and testing
+    training_validation_split = int(0.9 * len(shuffled_data))
+    training_validation_data = data.iloc[:training_validation_split]
+    testing_data = data.iloc[training_validation_split:]
 
-    # Error
-    error = regressor.score(x_train, y_train)
-    print("\nRegressor error: {}\n".format(error))
+    # Split data
+    training_validation_x = training_validation_data.loc[:, training_validation_data.columns != output_label]
+    training_validation_y = training_validation_data.loc[:, [output_label]]
+    test_x = testing_data.loc[:, testing_data.columns != output_label]
+    test_y = testing_data.loc[:, [output_label]]
+
+    untuned_main(training_validation_x, training_validation_y, test_x, test_y)
 
 
 if __name__ == "__main__":
