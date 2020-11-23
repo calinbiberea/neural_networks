@@ -185,13 +185,13 @@ class Regressor:
         neural_network = self.neural_network
 
         # Create optimizer
-        optimizer = optim.SGD(neural_network.parameters(), lr=0.01)
+        optimizer = optim.SGD(neural_network.parameters(), lr=0.15)
 
         # Use mean squared error for calculating the loss
         loss_function = nn.MSELoss()
 
         # Assume we have batches of size 50
-        batch_size = 100
+        batch_size = 25
 
         dataset = Data.TensorDataset(training_x, training_y)
 
