@@ -191,7 +191,7 @@ class Regressor:
         loss_function = nn.MSELoss()
 
         # Assume we have batches of size 50
-        batch_size = 100
+        batch_size = 25
 
         dataset = Data.TensorDataset(training_x, training_y)
 
