@@ -191,7 +191,7 @@ class Regressor:
         loss_function = nn.MSELoss()
 
         # Assume we have batches of size 50
-        batch_size = 50
+        batch_size = 100
 
         dataset = Data.TensorDataset(training_x, training_y)
 
@@ -347,7 +347,7 @@ def example_main():
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
     # to make sure the model isn't over-fitting
-    regressor = Regressor(x_train, nb_epoch=10)
+    regressor = Regressor(x_train, nb_epoch=100)
     regressor.fit(x_train, y_train)
     save_regressor(regressor)
 
