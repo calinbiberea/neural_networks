@@ -112,10 +112,8 @@ class Regressor:
                                                     columns=self.ocean_proximity_features)
 
         # Drop the obsolete ocean_proximity feature and introduce the one hot encoded vector
-        one_hot_encoded_x = pd.concat(
-            [x.loc[:, x.columns != "ocean_proximity"], one_hot_encoded_pd_dataframe], axis=1)
-
-        print(one_hot_encoded_x)
+        x.append(one_hot_encoded_pd_dataframe)
+        one_hot_encoded_x = pd.DataFrame(x.loc[:, x.columns != "ocean_proximity"])
 
         # Get the average of every column
         means = one_hot_encoded_x.mean(axis=0)
@@ -362,8 +360,8 @@ def example_main():
 
     # Split data into training + validation and testing
     training_validation_split = int(0.9 * len(shuffled_data))
-    training_validation_data = data.iloc[:training_validation_split]
-    testing_data = data.iloc[training_validation_split:]
+    training_validation_data = data.loc[:training_validation_split]
+    testing_data = data.loc[training_validation_split:]
 
     # Split data
     training_validation_x = training_validation_data.loc[:, training_validation_data.columns != output_label]
