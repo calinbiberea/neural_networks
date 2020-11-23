@@ -406,7 +406,7 @@ def example_main():
     test_y = testing_data.loc[:, [output_label]]
 
     # In case you want to run an untuned regressor
-    untuned_main(training_validation_x, training_validation_y, test_x, test_y)
+    # untuned_main(training_validation_x, training_validation_y, test_x, test_y)
 
     nb_epoch = RegressorHyperParameterSearch(training_validation_x, training_validation_y)
 
