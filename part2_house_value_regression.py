@@ -5,6 +5,7 @@ import torch.utils.data as Data
 import pickle
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelBinarizer, MinMaxScaler
 from sklearn.metrics import mean_squared_error
 
@@ -60,6 +61,8 @@ class Regressor:
         self.input_size = preprocessed_x.shape[1]
         self.output_size = 1
         self.nb_epoch = nb_epoch
+        self.training_losses = []
+        self.validation_losses = []
 
         # Then construct the neural network itself
         self.neural_network = NeuralNetwork(self.input_size, self.output_size)
@@ -71,7 +74,7 @@ class Regressor:
     def _preprocessor(self, x, y=None, training=False):
         """ 
         Preprocess input of the network.
-          
+
         Arguments:
             - x {pd.DataFrame} -- Raw input array of shape
                 (batch_size, input_size).
@@ -164,7 +167,7 @@ class Regressor:
         #                       ** END OF YOUR CODE **
         #######################################################################
 
-    def fit(self, x, y):
+    def fit(self, x, y, validation_data=None):
         """
         Regressor training function
 
@@ -203,6 +206,9 @@ class Regressor:
 
         loader = Data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
 
+        training_losses = self.training_losses
+        validation_losses = self.validation_losses
+
         # Train for given number of epochs
         for epoch in range(nb_epoch):
             # Execute Mini-batched Gradient Descent
@@ -225,6 +231,13 @@ class Regressor:
                 # Update parameters
                 optimizer.step()
 
+            training_losses.append(self.score(x, y))
+
+            if validation_data:
+                validation_x, validation_y = validation_data
+
+                validation_losses.append(self.score(validation_x, validation_y))
+
         return self
 
         #######################################################################
@@ -236,7 +249,7 @@ class Regressor:
         Output the value corresponding to an input x.
 
         Arguments:
-            x {pd.DataFrame} -- Raw input array of shape 
+            x {pd.DataFrame} -- Raw input array of shape
                 (batch_size, input_size).
 
         Returns:
@@ -264,7 +277,7 @@ class Regressor:
         Function to evaluate the model accuracy on a validation dataset.
 
         Arguments:
-            - x {pd.DataFrame} -- Raw input array of shape 
+            - x {pd.DataFrame} -- Raw input array of shape
                 (batch_size, input_size).
             - y {pd.DataFrame} -- Raw output array of shape (batch_size, 1).
 
@@ -287,7 +300,7 @@ class Regressor:
 
 
 def save_regressor(trained_model):
-    """ 
+    """
     Utility function to save the trained regressor model in part2_model.pickle.
     """
     # If you alter this, make sure it works in tandem with load_regressor
@@ -297,7 +310,7 @@ def save_regressor(trained_model):
 
 
 def load_regressor():
-    """ 
+    """
     Utility function to load the trained regressor model in part2_model.pickle.
     """
     # If you alter this, make sure it works in tandem with save_regressor
@@ -310,14 +323,14 @@ def load_regressor():
 def RegressorHyperParameterSearch(x_train_val, y_train_val):
     # Ensure to add whatever inputs you deem necessary to this function
     """
-    Performs a hyper-parameter for fine-tuning the regressor implemented 
+    Performs a hyper-parameter for fine-tuning the regressor implemented
     in the Regressor class.
 
     Arguments:
         Add whatever inputs you need.
-        
+
     Returns:
-        The function should return your optimised hyper-parameters. 
+        The function should return your optimised hyper-parameters.
 
     """
 
@@ -329,8 +342,10 @@ def RegressorHyperParameterSearch(x_train_val, y_train_val):
 
     NUMBER_OF_DATA_POINTS = len(x_train_val)
     FOLD_SIZE = int(NUMBER_OF_DATA_POINTS / 10)
-    splits_x = [x_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
-    splits_y = [y_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
+    splits_x = [x_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in
+                range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
+    splits_y = [y_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in
+                range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
 
     # Given the size of our elements, remove one element from the dataset to not have obscure validation
     del splits_x[-1]
@@ -356,7 +371,8 @@ def RegressorHyperParameterSearch(x_train_val, y_train_val):
             network.fit(training_x, training_y)
 
             rmse = network.score(validation_x, validation_y)
-            nb_epochs_choices_scores[epoch_choice_index] = nb_epochs_choices_scores[epoch_choice_index] + rmse
+            nb_epochs_choices_scores[epoch_choice_index] = nb_epochs_choices_scores[
+                                                               epoch_choice_index] + rmse
 
     nb_epochs_choices_scores = nb_epochs_choices_scores / NUMBER_OF_FOLDS
     best_nb_epoch = (nb_epochs_choices_scores.argmin() + 1) * EPOCH_COUNT_JUMP
@@ -376,7 +392,15 @@ def untuned_main(x_train, y_train, x_validation, y_validation, x_test, y_test):
     # You probably want to separate some held-out data
     # to make sure the model isn't over-fitting
     regressor = Regressor(x_train, nb_epoch=50)
-    regressor.fit(x_train, y_train)
+    regressor.fit(x_train, y_train, validation_data=(x_validation, y_validation))
+
+    epochs = range(1, 51)
+
+    plt.plot(epochs, regressor.training_losses, epochs, regressor.validation_losses)
+    plt.xlabel("epoch")
+    plt.ylabel("rmse")
+    plt.show()
+
     save_regressor(regressor)
 
     # Error on testing data
