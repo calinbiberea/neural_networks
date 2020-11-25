@@ -495,10 +495,10 @@ def example_main():
     y_test = data_test.loc[:, [output_label]]
 
     # In case you want to run an untuned regressor
-    untuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, AVERAGE_FOLD_SIZE)
+    # untuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, AVERAGE_FOLD_SIZE)
 
     # Hyperparameter tuning and saving to pickle
-    # tuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, AVERAGE_FOLD_SIZE)
+    tuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, AVERAGE_FOLD_SIZE)
 
 
 if __name__ == "__main__":
