@@ -196,7 +196,7 @@ class Regressor:
         # Use mean squared error for calculating the loss
         loss_function = nn.MSELoss()
 
-        # Assume we have batches of size 50
+        # Assume we have batches of size 25
         batch_size = 25
 
         dataset = Data.TensorDataset(training_x, training_y)
@@ -331,16 +331,16 @@ def RegressorHyperParameterSearch(x_train_val, y_train_val):
     #######################################################################
 
     # Tuning comes with the need for cross-validation, so do that
-    NUMBER_OF_FOLDS = 10
+
     NUMBER_OF_DATA_POINTS = len(x_train_val)
-    FOLD_SIZE = int(NUMBER_OF_DATA_POINTS / NUMBER_OF_FOLDS)
+    FOLD_SIZE = int(NUMBER_OF_DATA_POINTS / 10)
     splits_x = [x_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
     splits_y = [y_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
 
     # Given the size of our elements, remove one element from the dataset to not have obscure validation
     del splits_x[-1]
     del splits_y[-1]
-    NUMBER_OF_FOLDS = NUMBER_OF_FOLDS - 1
+    NUMBER_OF_FOLDS = 10 - 1
 
     # The first hyperparameter that is worth looking at is the number of epochs
     # Pick some epochs in an upper bounded range (which we find by testing)
@@ -375,7 +375,7 @@ def RegressorHyperParameterSearch(x_train_val, y_train_val):
     #######################################################################
 
 
-def untuned_main(x_train, y_train, x_test, y_test):
+def untuned_main(x_train, y_train, x_validation, y_validation, x_test, y_test):
     # Training
     # This example trains on the whole available dataset.
     # You probably want to separate some held-out data
@@ -401,18 +401,25 @@ def example_main():
     shuffled_data = data.sample(frac=1)
 
     # Split data into training + validation and testing
-    training_validation_split = int(0.9 * len(shuffled_data))
-    training_validation_data = data.loc[:training_validation_split]
-    testing_data = data.loc[training_validation_split:]
+    NUMBER_OF_FOLDS = 10
+    NUMBER_OF_DATA_POINTS = len(shuffled_data)
+    AVERAGE_FOLD_SIZE = int(NUMBER_OF_DATA_POINTS / NUMBER_OF_FOLDS)
+    TRAINING_SIZE = 8 * AVERAGE_FOLD_SIZE
+    VALIDATION_SIZE = AVERAGE_FOLD_SIZE
+    # Split
+    data_train = shuffled_data.iloc[:TRAINING_SIZE, :]
+    data_validation = shuffled_data.iloc[TRAINING_SIZE + 1:TRAINING_SIZE + 1 + VALIDATION_SIZE, :]
+    data_test = shuffled_data.iloc[TRAINING_SIZE + 1 + VALIDATION_SIZE:, :]
 
-    # Split data
-    training_validation_x = training_validation_data.loc[:, training_validation_data.columns != output_label]
-    training_validation_y = training_validation_data.loc[:, [output_label]]
-    test_x = testing_data.loc[:, testing_data.columns != output_label]
-    test_y = testing_data.loc[:, [output_label]]
+    x_train = data_train.loc[:, data_train.columns != output_label]
+    y_train = data_train.loc[:, [output_label]]
+    x_validation = data_validation.loc[:, data_validation.columns != output_label]
+    y_validation = data_validation.loc[:, [output_label]]
+    x_test = data_test.loc[:, data_test.columns != output_label]
+    y_test = data_test.loc[:, [output_label]]
 
     # In case you want to run an untuned regressor
-    untuned_main(training_validation_x, training_validation_y, test_x, test_y)
+    untuned_main(x_train, y_train, x_validation, y_validation, x_test, y_test)
 
     # nb_epoch = RegressorHyperParameterSearch(training_validation_x, training_validation_y)
     #

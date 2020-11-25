@@ -377,6 +377,7 @@ class MultiLayerNetwork(object):
                 layers.append(ReluLayer())
             elif activations[i + 1] == "sigmoid":
                 layers.append(SigmoidLayer())
+            # 
 
         self._layers = layers
 
