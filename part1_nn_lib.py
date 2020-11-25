@@ -135,7 +135,7 @@ class SigmoidLayer(Layer):
 
         self._cache_current = {"x": x}
 
-        return np.vectorize(sigmoid)(x)
+        return sigmoid(x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -161,7 +161,7 @@ class SigmoidLayer(Layer):
 
         x = self._cache_current["x"]
 
-        return np.multiply(grad_z, np.vectorize(sigmoid_derivative)(x))
+        return np.multiply(grad_z, sigmoid_derivative(x))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -171,11 +171,11 @@ class SigmoidLayer(Layer):
 # ReLU function and derivative
 
 def relu(x):
-    return max(x, 0)
+    return x * (x > 0)
 
 
 def relu_derivative(x):
-    return 1 if x > 0 else 0
+    return x > 0
 
 
 class ReluLayer(Layer):
@@ -208,7 +208,7 @@ class ReluLayer(Layer):
 
         self._cache_current = {"x": x}
 
-        return np.vectorize(relu)(x)
+        return relu(x)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -234,7 +234,7 @@ class ReluLayer(Layer):
 
         x = self._cache_current["x"]
 
-        return np.multiply(grad_z, np.vectorize(relu_derivative)(x))
+        return np.multiply(grad_z, relu_derivative(x))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -339,12 +339,6 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
-
-
-activation_layers = {
-    "relu": ReluLayer(),
-    "sigmoid": SigmoidLayer()
-}
 
 
 class MultiLayerNetwork(object):
@@ -679,10 +673,7 @@ class Preprocessor(object):
         mins = self.mins
         maxs = self.maxs
 
-        transpose = data.T
-
-        return np.array([normalize(transpose[i], mins[i], maxs[i])
-                         for i in range(0, len(data[0]))]).T
+        return normalize(data, mins[np.newaxis, :], maxs[np.newaxis, :])
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -709,10 +700,7 @@ class Preprocessor(object):
         mins = self.mins
         maxs = self.maxs
 
-        transpose = data.T
-
-        return np.array([denormalize(transpose[i], mins[i], maxs[i])
-                         for i in range(0, len(data[0]))]).T
+        return denormalize(data, mins[np.newaxis, :], maxs[np.newaxis, :])
 
         #######################################################################
         #                       ** END OF YOUR CODE **
