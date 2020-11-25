@@ -32,8 +32,7 @@ class NeuralNetwork(nn.Module):
         x = torch.relu(self.second_hidden_layer(x))
         x = torch.relu(self.third_hidden_layer(x))
         x = torch.relu(self.fourth_hidden_layer(x))
-        x = torch.sigmoid(self.output_layer(x))
-        return x
+        return self.output_layer(x)
 
 
 class Regressor:
@@ -194,7 +193,7 @@ class Regressor:
         neural_network = self.neural_network
 
         # Create optimizer
-        optimizer = optim.SGD(neural_network.parameters(), lr=0.15, momentum=0.8)
+        optimizer = optim.SGD(neural_network.parameters(), lr=0.08, momentum=0.8)
 
         # Use mean squared error for calculating the loss
         loss_function = nn.MSELoss()
@@ -290,9 +289,8 @@ class Regressor:
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        rescaled_prediction = self.predict(x)
-        with torch.no_grad():
-            return np.sqrt(mean_squared_error(rescaled_prediction, y))
+        prediction = self.predict(x)
+        return np.sqrt(mean_squared_error(prediction, y))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -320,7 +318,10 @@ def load_regressor():
     return trained_model
 
 
-def RegressorHyperParameterSearch(x_train_val, y_train_val):
+NUMBER_OF_FOLDS = 10
+
+
+def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation, average_fold_size):
     # Ensure to add whatever inputs you deem necessary to this function
     """
     Performs a hyper-parameter for fine-tuning the regressor implemented
@@ -337,64 +338,69 @@ def RegressorHyperParameterSearch(x_train_val, y_train_val):
     #######################################################################
     #                       ** START OF YOUR CODE **
     #######################################################################
+    # We do some form of cross-validation by keeping the best model through different training and validation
+    number_of_data_points = len(x_train_and_validation)
+    x_folds = [x_train_and_validation.iloc[i * average_fold_size: i * average_fold_size + average_fold_size, :] for i in
+               range(0, 9)]
+    y_folds = [y_train_and_validation.iloc[i * average_fold_size: i * average_fold_size + average_fold_size, :] for i in
+               range(0, 9)]
 
-    # Tuning comes with the need for cross-validation, so do that
+    def tune_number_of_epochs(x_splits, y_splits):
+        # Essentially, we will try epochs in jumps of 25s. We will also stop early if we see no significant improvement
+        EPOCH_JUMPS = 20
+        EPOCH_COUNT_JUMP = 25
+        nb_epochs_choices = [EPOCH_COUNT_JUMP * i for i in range(1, EPOCH_JUMPS + 1)]
+        nb_epochs_choices_scores = np.zeros(EPOCH_JUMPS)
 
-    NUMBER_OF_DATA_POINTS = len(x_train_val)
-    FOLD_SIZE = int(NUMBER_OF_DATA_POINTS / 10)
-    splits_x = [x_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in
-                range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
-    splits_y = [y_train_val.loc[i: i + FOLD_SIZE - 1, :] for i in
-                range(0, NUMBER_OF_DATA_POINTS, FOLD_SIZE)]
+        for i in range(NUMBER_OF_FOLDS - 1):
+            training_x = pd.concat([x_splits[k] for k in range(NUMBER_OF_FOLDS - 1) if k != i])
+            training_y = pd.concat([y_splits[k] for k in range(NUMBER_OF_FOLDS - 1) if k != i])
+            validation_x = x_splits[i]
+            validation_y = y_splits[i]
 
-    # Given the size of our elements, remove one element from the dataset to not have obscure validation
-    del splits_x[-1]
-    del splits_y[-1]
-    NUMBER_OF_FOLDS = 10 - 1
+            for epoch_choice_index in range(EPOCH_JUMPS):
+                nb_epoch = nb_epochs_choices[epoch_choice_index]
+                network = Regressor(training_x, nb_epoch=nb_epoch)
+                network.fit(training_x, training_y)
 
-    # The first hyperparameter that is worth looking at is the number of epochs
-    # Pick some epochs in an upper bounded range (which we find by testing)
-    EPOCH_TRIES = 20
-    EPOCH_COUNT_JUMP = 10
-    nb_epochs_choices = [EPOCH_COUNT_JUMP * i for i in range(1, EPOCH_TRIES + 1)]
-    nb_epochs_choices_scores = np.zeros(EPOCH_TRIES)
+                rmse = network.score(validation_x, validation_y)
+                nb_epochs_choices_scores[epoch_choice_index] = nb_epochs_choices_scores[
+                                                                   epoch_choice_index] + rmse
 
-    for i in range(NUMBER_OF_FOLDS):
-        training_x = pd.concat([splits_x[k] for k in range(NUMBER_OF_FOLDS) if k != i])
-        training_y = pd.concat([splits_y[k] for k in range(NUMBER_OF_FOLDS) if k != i])
-        validation_x = splits_x[i]
-        validation_y = splits_y[i]
+        nb_epochs_choices_scores = nb_epochs_choices_scores / NUMBER_OF_FOLDS
 
-        for epoch_choice_index in range(EPOCH_TRIES):
-            nb_epoch = nb_epochs_choices[epoch_choice_index]
-            network = Regressor(training_x, nb_epoch=nb_epoch)
-            network.fit(training_x, training_y)
+        best_nb_epoch = (nb_epochs_choices_scores.argmin() + 1) * EPOCH_COUNT_JUMP
+        print("A decent number of epochs to run is: ")
+        print(best_nb_epoch)
 
-            rmse = network.score(validation_x, validation_y)
-            nb_epochs_choices_scores[epoch_choice_index] = nb_epochs_choices_scores[
-                                                               epoch_choice_index] + rmse
+        return best_nb_epoch
 
-    nb_epochs_choices_scores = nb_epochs_choices_scores / NUMBER_OF_FOLDS
-    best_nb_epoch = (nb_epochs_choices_scores.argmin() + 1) * EPOCH_COUNT_JUMP
-    print("A decent number of epochs to run is: ")
-    print(best_nb_epoch)
+    # Parameters to tune
+    nb_epoch = tune_number_of_epochs(x_folds, y_folds)
 
-    return best_nb_epoch  # Return the chosen hyper parameters
-
-    #######################################################################
-    #                       ** END OF YOUR CODE **
-    #######################################################################
+    # Return the chosen hyper parameters
+    return nb_epoch
 
 
-def untuned_main(x_train, y_train, x_validation, y_validation, x_test, y_test):
+#######################################################################
+#                       ** END OF YOUR CODE **
+#######################################################################
+
+
+def untuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, average_fold_size):
     # Training
-    # This example trains on the whole available dataset.
     # You probably want to separate some held-out data
     # to make sure the model isn't over-fitting
+    TRAINING_SIZE = 8 * average_fold_size
+    x_train = x_train_and_validation.iloc[:TRAINING_SIZE, :]
+    x_validation = x_train_and_validation.iloc[TRAINING_SIZE:, :]
+    y_train = y_train_and_validation.iloc[:TRAINING_SIZE, :]
+    y_validation = y_train_and_validation.iloc[TRAINING_SIZE:, :]
     regressor = Regressor(x_train, nb_epoch=50)
     regressor.fit(x_train, y_train, validation_data=(x_validation, y_validation))
 
-    epochs = range(1, 51)
+    # Prepare for plotting as well
+    epochs = range(1, 50 + 1)
 
     train_line, = plt.plot(epochs, regressor.training_losses, label="train")
     validation_line, = plt.plot(epochs, regressor.validation_losses, label="validation")
@@ -405,11 +411,29 @@ def untuned_main(x_train, y_train, x_validation, y_validation, x_test, y_test):
     plt.ylabel("rmse")
     plt.show()
 
+    # No need to save the regressor since we tune right after, this is just for reference
+    # save_regressor(regressor)
+
+    # Error on testing data
+    error = regressor.score(x_test, y_test)
+    print("\nRegressor error: {}\n".format(error))
+
+
+def tuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, average_fold_size):
+    # Tuning
+    nb_epoch = RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation, average_fold_size)
+
+    # Train on validation data as well since it is more useful
+    regressor = Regressor(x_train_and_validation, nb_epoch=nb_epoch)
+    regressor.fit(x_train_and_validation, y_train_and_validation)
     save_regressor(regressor)
 
     # Error on testing data
     error = regressor.score(x_test, y_test)
     print("\nRegressor error: {}\n".format(error))
+
+    # Save the regressor since this is probably the best we can generate
+    save_regressor(regressor)
 
 
 def example_main():
@@ -424,35 +448,23 @@ def example_main():
     shuffled_data = data.sample(frac=1)
 
     # Split data into training + validation and testing
-    NUMBER_OF_FOLDS = 10
     NUMBER_OF_DATA_POINTS = len(shuffled_data)
     AVERAGE_FOLD_SIZE = int(NUMBER_OF_DATA_POINTS / NUMBER_OF_FOLDS)
-    TRAINING_SIZE = 8 * AVERAGE_FOLD_SIZE
-    VALIDATION_SIZE = AVERAGE_FOLD_SIZE
+    TRAINING_AND_VALIDATION_SIZE = 9 * AVERAGE_FOLD_SIZE
     # Split
-    data_train = shuffled_data.iloc[:TRAINING_SIZE, :]
-    data_validation = shuffled_data.iloc[TRAINING_SIZE + 1:TRAINING_SIZE + 1 + VALIDATION_SIZE, :]
-    data_test = shuffled_data.iloc[TRAINING_SIZE + 1 + VALIDATION_SIZE:, :]
+    data_train_and_validation = shuffled_data.iloc[:TRAINING_AND_VALIDATION_SIZE, :]
+    data_test = shuffled_data.iloc[TRAINING_AND_VALIDATION_SIZE:, :]
 
-    x_train = data_train.loc[:, data_train.columns != output_label]
-    y_train = data_train.loc[:, [output_label]]
-    x_validation = data_validation.loc[:, data_validation.columns != output_label]
-    y_validation = data_validation.loc[:, [output_label]]
+    x_train_and_validation = data_train_and_validation.loc[:, data_test.columns != output_label]
+    y_train_and_validation = data_train_and_validation.loc[:, [output_label]]
     x_test = data_test.loc[:, data_test.columns != output_label]
     y_test = data_test.loc[:, [output_label]]
 
     # In case you want to run an untuned regressor
-    untuned_main(x_train, y_train, x_validation, y_validation, x_test, y_test)
+    # untuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, AVERAGE_FOLD_SIZE)
 
-    # nb_epoch = RegressorHyperParameterSearch(training_validation_x, training_validation_y)
-    #
-    # regressor = Regressor(training_validation_x, nb_epoch=nb_epoch)
-    # regressor.fit(training_validation_x, training_validation_y)
-    # save_regressor(regressor)
-    #
-    # # Error on testing data
-    # error = regressor.score(test_x, test_y)
-    # print("\nRegressor error: {}\n".format(error))
+    # Hyperparameter tuning and saving to pickle
+    tuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, AVERAGE_FOLD_SIZE)
 
 
 if __name__ == "__main__":
