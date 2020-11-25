@@ -277,13 +277,8 @@ class Regressor:
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        preprocessed_x, _ = self._preprocessor(x, y, training=False)
-
+        rescaled_prediction = self.predict(x)
         with torch.no_grad():
-            prediction = self.neural_network(preprocessed_x)
-
-            rescaled_prediction = self.output_scaler.inverse_transform(prediction)
-
             return np.sqrt(mean_squared_error(rescaled_prediction, y))
 
         #######################################################################
