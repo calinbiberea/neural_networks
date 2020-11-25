@@ -318,10 +318,7 @@ def load_regressor():
     return trained_model
 
 
-NUMBER_OF_FOLDS = 10
-
-
-def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation, average_fold_size):
+def RegressorHyperParameterSearch(x_train_val, y_train_val):
     # Ensure to add whatever inputs you deem necessary to this function
     """
     Performs a hyper-parameter for fine-tuning the regressor implemented
