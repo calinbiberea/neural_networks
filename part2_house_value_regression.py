@@ -32,12 +32,13 @@ class NeuralNetwork(nn.Module):
         x = torch.relu(self.second_hidden_layer(x))
         x = torch.relu(self.third_hidden_layer(x))
         x = torch.relu(self.fourth_hidden_layer(x))
-        return self.output_layer(x)
+        x = self.output_layer(x)
+        return x
 
 
 class Regressor:
 
-    def __init__(self, x, nb_epoch=10, lr=0.8, batch_size=25):
+    def __init__(self, x, nb_epoch=10, lr=0.08, batch_size=25):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -162,6 +163,10 @@ class Regressor:
         tensor_y = \
             torch.tensor(normalised_y, dtype=torch.float) if normalised_y is not None else None
 
+        if torch.cuda.is_available():
+            tensor_x = tensor_x.cuda()
+            tensor_y = tensor_y.cuda() if tensor_y is not None else None
+
         return tensor_x, tensor_y
 
         #######################################################################
@@ -193,6 +198,9 @@ class Regressor:
 
         # Get the network as well
         neural_network = self.neural_network
+
+        if torch.cuda.is_available():
+            neural_network.cuda()
 
         # Create optimizer
         optimizer = optim.SGD(neural_network.parameters(), lr=self.lr, momentum=0.8)
@@ -262,7 +270,7 @@ class Regressor:
         preprocessed_x, _ = self._preprocessor(x, training=False)
 
         with torch.no_grad():
-            prediction = self.neural_network(preprocessed_x).numpy()
+            prediction = self.neural_network(preprocessed_x).cpu().numpy()
 
             return self.output_scaler.inverse_transform(prediction)
 
@@ -321,7 +329,8 @@ def load_regressor():
 NUMBER_OF_FOLDS = 10
 
 
-def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation, average_fold_size):
+def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation,
+                                  average_fold_size):
     # Ensure to add whatever inputs you deem necessary to this function
     """
     Performs a hyper-parameter for fine-tuning the regressor implemented
@@ -339,10 +348,12 @@ def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation
     #                       ** START OF YOUR CODE **
     #######################################################################
     # We do some form of cross-validation by keeping the best model through different training and validation
-    x_folds = [x_train_and_validation.iloc[i * average_fold_size: i * average_fold_size + average_fold_size, :] for i in
-               range(0, 9)]
-    y_folds = [y_train_and_validation.iloc[i * average_fold_size: i * average_fold_size + average_fold_size, :] for i in
-               range(0, 9)]
+    x_folds = [x_train_and_validation.iloc[
+               i * average_fold_size: i * average_fold_size + average_fold_size, :]
+               for i in range(0, 9)]
+    y_folds = [y_train_and_validation.iloc[
+               i * average_fold_size: i * average_fold_size + average_fold_size, :]
+               for i in range(0, 9)]
 
     def tune_parameter(x_splits, y_splits, parameter_to_tune):
         # Factor and number of parameters to check for
@@ -385,7 +396,8 @@ def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation
         parameter_rmse_scores /= NUMBER_OF_FOLDS
 
         optimised_parameter = (parameter_rmse_scores.argmin() + 1) * PARAMETER_INCREASE
-        print("After hyperparameter tuning for the parameter ", parameter_to_tune, " the optimal value is: ",
+        print("After hyperparameter tuning for the parameter ", parameter_to_tune,
+              " the optimal value is: ",
               optimised_parameter)
 
         return optimised_parameter
@@ -404,29 +416,32 @@ def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation
 #######################################################################
 
 
-def untuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, average_fold_size):
+def untuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, average_fold_size,
+                 plot=False):
     # Training
     # You probably want to separate some held-out data
     # to make sure the model isn't over-fitting
+    nb_epoch = 50
+
     TRAINING_SIZE = 8 * average_fold_size
     x_train = x_train_and_validation.iloc[:TRAINING_SIZE, :]
     x_validation = x_train_and_validation.iloc[TRAINING_SIZE:, :]
     y_train = y_train_and_validation.iloc[:TRAINING_SIZE, :]
     y_validation = y_train_and_validation.iloc[TRAINING_SIZE:, :]
-    regressor = Regressor(x_train, nb_epoch=50)
+    regressor = Regressor(x_train, nb_epoch)
     regressor.fit(x_train, y_train, validation_data=(x_validation, y_validation))
 
-    # Prepare for plotting as well
-    epochs = range(1, 50 + 1)
+    if plot:
+        epochs = range(1, nb_epoch + 1)
 
-    train_line, = plt.plot(epochs, regressor.training_losses, label="train")
-    validation_line, = plt.plot(epochs, regressor.validation_losses, label="validation")
+        train_line, = plt.plot(epochs, regressor.training_losses, label="train")
+        validation_line, = plt.plot(epochs, regressor.validation_losses, label="validation")
 
-    plt.legend(handles=[train_line, validation_line])
+        plt.legend(handles=[train_line, validation_line])
 
-    plt.xlabel("epoch")
-    plt.ylabel("rmse")
-    plt.show()
+        plt.xlabel("epoch")
+        plt.ylabel("rmse")
+        plt.show()
 
     # No need to save the regressor since we tune right after, this is just for reference
     # save_regressor(regressor)
@@ -438,7 +453,8 @@ def untuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test,
 
 def tuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, average_fold_size):
     # Tuning
-    lr, nb_epoch, batch_size = RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation,
+    lr, nb_epoch, batch_size = RegressorHyperParameterSearch(x_train_and_validation,
+                                                             y_train_and_validation,
                                                              average_fold_size)
 
     # Train on validation data as well since it is more useful
