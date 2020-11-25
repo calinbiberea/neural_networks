@@ -17,15 +17,21 @@ class NeuralNetwork(nn.Module):
     def __init__(self, input_size, output_size):
         super(NeuralNetwork, self).__init__()
         # Input to hidden
-        first_hidden_layer_size = int((2 / 3) * input_size)
-        self.first_hidden_layer = nn.Linear(input_size, first_hidden_layer_size)
+        hidden_layer_size = int((3 / 2) * input_size)
+        self.first_hidden_layer = nn.Linear(input_size, hidden_layer_size)
+        self.second_hidden_layer = nn.Linear(hidden_layer_size, hidden_layer_size)
+        self.third_hidden_layer = nn.Linear(hidden_layer_size, hidden_layer_size)
+        self.fourth_hidden_layer = nn.Linear(hidden_layer_size, hidden_layer_size)
 
         # Second hidden layer to output layer
-        self.output_layer = nn.Linear(first_hidden_layer_size, output_size)
+        self.output_layer = nn.Linear(hidden_layer_size, output_size)
 
     def forward(self, x):
-        x = torch.tanh(self.first_hidden_layer(x))
-        x = torch.tanh(self.output_layer(x))
+        x = torch.relu(self.first_hidden_layer(x))
+        x = torch.relu(self.second_hidden_layer(x))
+        x = torch.relu(self.third_hidden_layer(x))
+        x = torch.relu(self.fourth_hidden_layer(x))
+        x = torch.sigmoid(self.output_layer(x))
         return x
 
 
@@ -374,7 +380,7 @@ def untuned_main(x_train, y_train, x_test, y_test):
     # This example trains on the whole available dataset.
     # You probably want to separate some held-out data
     # to make sure the model isn't over-fitting
-    regressor = Regressor(x_train, nb_epoch=200)
+    regressor = Regressor(x_train, nb_epoch=50)
     regressor.fit(x_train, y_train)
     save_regressor(regressor)
 
@@ -406,17 +412,17 @@ def example_main():
     test_y = testing_data.loc[:, [output_label]]
 
     # In case you want to run an untuned regressor
-    # untuned_main(training_validation_x, training_validation_y, test_x, test_y)
+    untuned_main(training_validation_x, training_validation_y, test_x, test_y)
 
-    nb_epoch = RegressorHyperParameterSearch(training_validation_x, training_validation_y)
-
-    regressor = Regressor(training_validation_x, nb_epoch=nb_epoch)
-    regressor.fit(training_validation_x, training_validation_y)
-    save_regressor(regressor)
-
-    # Error on testing data
-    error = regressor.score(test_x, test_y)
-    print("\nRegressor error: {}\n".format(error))
+    # nb_epoch = RegressorHyperParameterSearch(training_validation_x, training_validation_y)
+    #
+    # regressor = Regressor(training_validation_x, nb_epoch=nb_epoch)
+    # regressor.fit(training_validation_x, training_validation_y)
+    # save_regressor(regressor)
+    #
+    # # Error on testing data
+    # error = regressor.score(test_x, test_y)
+    # print("\nRegressor error: {}\n".format(error))
 
 
 if __name__ == "__main__":
