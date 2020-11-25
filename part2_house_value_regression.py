@@ -37,7 +37,7 @@ class NeuralNetwork(nn.Module):
 
 class Regressor:
 
-    def __init__(self, x, nb_epoch=1000):
+    def __init__(self, x, nb_epoch=10, lr=0.8, batch_size=25):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -60,6 +60,8 @@ class Regressor:
         self.input_size = preprocessed_x.shape[1]
         self.output_size = 1
         self.nb_epoch = nb_epoch
+        self.lr = lr
+        self.batch_size = batch_size
         self.training_losses = []
         self.validation_losses = []
 
@@ -193,17 +195,14 @@ class Regressor:
         neural_network = self.neural_network
 
         # Create optimizer
-        optimizer = optim.SGD(neural_network.parameters(), lr=0.08, momentum=0.8)
+        optimizer = optim.SGD(neural_network.parameters(), lr=self.lr, momentum=0.8)
 
         # Use mean squared error for calculating the loss
         loss_function = nn.MSELoss()
 
-        # Assume we have batches of size 25
-        batch_size = 25
-
         dataset = Data.TensorDataset(training_x, training_y)
 
-        loader = Data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+        loader = Data.DataLoader(dataset=dataset, batch_size=self.batch_size, shuffle=True)
 
         training_losses = self.training_losses
         validation_losses = self.validation_losses
@@ -318,7 +317,11 @@ def load_regressor():
     return trained_model
 
 
-def RegressorHyperParameterSearch(x_train_val, y_train_val):
+# The most useful constant for cross_validation
+NUMBER_OF_FOLDS = 10
+
+
+def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation, average_fold_size):
     # Ensure to add whatever inputs you deem necessary to this function
     """
     Performs a hyper-parameter for fine-tuning the regressor implemented
@@ -336,18 +339,27 @@ def RegressorHyperParameterSearch(x_train_val, y_train_val):
     #                       ** START OF YOUR CODE **
     #######################################################################
     # We do some form of cross-validation by keeping the best model through different training and validation
-    number_of_data_points = len(x_train_and_validation)
     x_folds = [x_train_and_validation.iloc[i * average_fold_size: i * average_fold_size + average_fold_size, :] for i in
                range(0, 9)]
     y_folds = [y_train_and_validation.iloc[i * average_fold_size: i * average_fold_size + average_fold_size, :] for i in
                range(0, 9)]
 
-    def tune_number_of_epochs(x_splits, y_splits):
-        # Essentially, we will try epochs in jumps of 25s. We will also stop early if we see no significant improvement
-        EPOCH_JUMPS = 20
-        EPOCH_COUNT_JUMP = 25
-        nb_epochs_choices = [EPOCH_COUNT_JUMP * i for i in range(1, EPOCH_JUMPS + 1)]
-        nb_epochs_choices_scores = np.zeros(EPOCH_JUMPS)
+    def tune_parameter(x_splits, y_splits, parameter_to_tune):
+        # Factor and number of parameters to check for
+        if parameter_to_tune == "nb_epoch":
+            PARAMETER_INCREASE = 10
+            PARAMETER_COUNTS = 10
+        elif parameter_to_tune == "lr":
+            PARAMETER_INCREASE = 0.01
+            PARAMETER_COUNTS = 10
+        elif parameter_to_tune == "nb_batches":
+            PARAMETER_INCREASE = 25
+            PARAMETER_COUNTS = 4
+        else:
+            return
+
+        parameter_choices = [PARAMETER_INCREASE * i for i in range(1, PARAMETER_COUNTS + 1)]
+        parameter_rmse_scores = np.zeros(PARAMETER_COUNTS)
 
         for i in range(NUMBER_OF_FOLDS - 1):
             training_x = pd.concat([x_splits[k] for k in range(NUMBER_OF_FOLDS - 1) if k != i])
@@ -355,28 +367,35 @@ def RegressorHyperParameterSearch(x_train_val, y_train_val):
             validation_x = x_splits[i]
             validation_y = y_splits[i]
 
-            for epoch_choice_index in range(EPOCH_JUMPS):
-                nb_epoch = nb_epochs_choices[epoch_choice_index]
-                network = Regressor(training_x, nb_epoch=nb_epoch)
+            for parameter_index in range(PARAMETER_COUNTS):
+                parameter_value = parameter_choices[parameter_index]
+                network = None
+                if parameter_to_tune == "nb_epoch":
+                    network = Regressor(training_x, nb_epoch=parameter_value)
+                elif parameter_to_tune == "lr":
+                    network = Regressor(training_x, lr=parameter_value)
+                elif parameter_to_tune == "nb_batches":
+                    network = Regressor(training_x, batch_size=parameter_value)
+
                 network.fit(training_x, training_y)
 
                 rmse = network.score(validation_x, validation_y)
-                nb_epochs_choices_scores[epoch_choice_index] = nb_epochs_choices_scores[
-                                                                   epoch_choice_index] + rmse
+                parameter_rmse_scores[parameter_index] += rmse
 
-        nb_epochs_choices_scores = nb_epochs_choices_scores / NUMBER_OF_FOLDS
+        parameter_rmse_scores /= NUMBER_OF_FOLDS
 
-        best_nb_epoch = (nb_epochs_choices_scores.argmin() + 1) * EPOCH_COUNT_JUMP
-        print("A decent number of epochs to run is: ")
-        print(best_nb_epoch)
+        optimised_parameter = (parameter_rmse_scores.argmin() + 1) * PARAMETER_INCREASE
+        print("After hyperparameter tuning for ", parameter_to_tune, " is: ", optimised_parameter)
 
-        return best_nb_epoch
+        return optimised_parameter
 
     # Parameters to tune
-    nb_epoch = tune_number_of_epochs(x_folds, y_folds)
+    learning_rate = tune_parameter(x_folds, y_folds, "lr")
+    nb_epoch = tune_parameter(x_folds, y_folds, "nb_epoch")
+    batch_size = tune_parameter(x_folds, y_folds, "batch_size")
 
     # Return the chosen hyper parameters
-    return nb_epoch
+    return learning_rate, nb_epoch, batch_size
 
 
 #######################################################################
@@ -418,10 +437,11 @@ def untuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test,
 
 def tuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, average_fold_size):
     # Tuning
-    nb_epoch = RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation, average_fold_size)
+    lr, nb_epoch, batch_size = RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation,
+                                                             average_fold_size)
 
     # Train on validation data as well since it is more useful
-    regressor = Regressor(x_train_and_validation, nb_epoch=nb_epoch)
+    regressor = Regressor(x_train_and_validation, nb_epoch=nb_epoch, lr=lr, batch_size=batch_size)
     regressor.fit(x_train_and_validation, y_train_and_validation)
     save_regressor(regressor)
 
