@@ -396,7 +396,11 @@ def untuned_main(x_train, y_train, x_validation, y_validation, x_test, y_test):
 
     epochs = range(1, 51)
 
-    plt.plot(epochs, regressor.training_losses, epochs, regressor.validation_losses)
+    train_line, = plt.plot(epochs, regressor.training_losses, label="train")
+    validation_line, = plt.plot(epochs, regressor.validation_losses, label="validation")
+
+    plt.legend(handles=[train_line, validation_line])
+
     plt.xlabel("epoch")
     plt.ylabel("rmse")
     plt.show()
