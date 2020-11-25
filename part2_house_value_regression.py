@@ -347,14 +347,14 @@ def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation
     def tune_parameter(x_splits, y_splits, parameter_to_tune):
         # Factor and number of parameters to check for
         if parameter_to_tune == "nb_epoch":
-            PARAMETER_INCREASE = 10
-            PARAMETER_COUNTS = 10
+            PARAMETER_INCREASE = 50
+            PARAMETER_COUNTS = 20
         elif parameter_to_tune == "lr":
             PARAMETER_INCREASE = 0.01
             PARAMETER_COUNTS = 10
         elif parameter_to_tune == "nb_batches":
             PARAMETER_INCREASE = 25
-            PARAMETER_COUNTS = 4
+            PARAMETER_COUNTS = 5
         else:
             return
 
@@ -385,7 +385,8 @@ def RegressorHyperParameterSearch(x_train_and_validation, y_train_and_validation
         parameter_rmse_scores /= NUMBER_OF_FOLDS
 
         optimised_parameter = (parameter_rmse_scores.argmin() + 1) * PARAMETER_INCREASE
-        print("After hyperparameter tuning for ", parameter_to_tune, " is: ", optimised_parameter)
+        print("After hyperparameter tuning for the parameter ", parameter_to_tune, " the optimal value is: ",
+              optimised_parameter)
 
         return optimised_parameter
 
