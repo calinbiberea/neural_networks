@@ -194,7 +194,7 @@ class Regressor:
         neural_network = self.neural_network
 
         # Create optimizer
-        optimizer = optim.SGD(neural_network.parameters(), lr=0.15, momentum=0.8)
+        optimizer = optim.Adam(neural_network.parameters(), lr=0.001)
 
         # Use mean squared error for calculating the loss
         loss_function = nn.MSELoss()
