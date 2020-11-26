@@ -25,7 +25,7 @@ This will run the code for part 1, but it will not output anything, since nothin
 
 # part2_house_value_regression.py
 - open a Linux terminal from the working directory 
-- "part2_house_value_regression.py"
+- "python3 part2_house_value_regression.py"
 - press 'ENTER'
 
 This will run the code for part 2 and will output the regressor error. It will also create a pickle file which contains our model.
