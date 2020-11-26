@@ -23,7 +23,7 @@
 
 This will run the code for part 1, but it will not output anything, since nothing was requested to be output in part 1.
 
-# part2_house_value_regression.py
+# part2_house_value_regression.py instructions to run
 - open a Linux terminal from the working directory 
 - "python3 part2_house_value_regression.py"
 - press 'ENTER'
@@ -34,4 +34,16 @@ This version of the code calls tuned_main in the example_main function, which pe
 
 An interesting function to look at in part 2 is the untuned_main one, which given the flag plot = True, plots the test and validation 
 losses through an incresing number of epochs.
+
+# [Optional] Instructions to change the Neural Netwrok architecture
+- go to the NeuralNetwork class in part2_house_value_regression.py
+- add/remove linear layers as seen function and choose hidden layer size
+- choose the activations functions for each in the forward() method
+
+- go to the Regressor class in part2_house_value_regression.py
+- change the default values for the number of epochs, learning rate and batch size in the Regressor constructor
+
+# [Optional] Instructions to change the Tuning options
+- go to tune_parameter() function inside the RegressorHyperParameterSearch
+- change the PARAMETER_INCREASE and PARAMETER_COUNTS for each of the following: number of epochs, learning rate, batch size
 
