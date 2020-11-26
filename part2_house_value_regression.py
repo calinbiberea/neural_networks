@@ -458,7 +458,7 @@ def tuned_main(x_train_and_validation, y_train_and_validation, x_test, y_test, a
                                                              average_fold_size)
 
     # Train on validation data as well since it is more useful
-    regressor = Regressor(x_train_and_validation, nb_epoch=1000, lr=0.08, batch_size=25)
+    regressor = Regressor(x_train_and_validation, nb_epoch=nb_epoch, lr=lr, batch_size=batch_size)
     regressor.fit(x_train_and_validation, y_train_and_validation)
     save_regressor(regressor)
 
