@@ -37,8 +37,8 @@ losses through an incresing number of epochs.
 
 # [Optional] Instructions to change the Neural Netwrok architecture
 - go to the NeuralNetwork class in part2_house_value_regression.py
-- add/remove linear layers as seen function and choose hidden layer size
-- choose the activations functions for each in the forward() method
+- add/remove linear layers as seen fit and choose the size of hidden layers
+- choose the activations functions for each layer in the forward() method
 
 - go to the Regressor class in part2_house_value_regression.py
 - change the default values for the number of epochs, learning rate and batch size in the Regressor constructor
